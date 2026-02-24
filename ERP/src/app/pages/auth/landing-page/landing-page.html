@@ -1,0 +1,162 @@
+
+<header class="navbar">
+  <div class="navbar-brand">
+    <i class="pi pi-building"></i>
+    <span>ERP<strong>System</strong></span>
+  </div>
+  <nav class="navbar-actions">
+    <p-button
+      label="Iniciar sesión"
+      icon="pi pi-sign-in"
+      variant="outlined"
+      routerLink="/login"
+    />
+    <p-button
+      label="Registrarse"
+      icon="pi pi-user-plus"
+      routerLink="/register"
+    />
+  </nav>
+</header>
+
+
+<section class="hero">
+  <div class="hero-content">
+    <p-tag value="✦ Plataforma ERP Empresarial" styleClass="hero-badge" />
+
+    <h1 class="hero-title">
+      Gestiona tu empresa<br />
+      <span class="gradient-text">de forma inteligente</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      Una plataforma todo-en-uno para administrar tu inventario, usuarios,
+      finanzas y operaciones. Simple, seguro y siempre disponible.
+    </p>
+
+    <div class="hero-cta">
+      <p-button
+        label="Comenzar gratis"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        size="large"
+        routerLink="/register"
+        styleClass="cta-primary"
+      />
+      <p-button
+        label="Ya tengo cuenta"
+        icon="pi pi-sign-in"
+        size="large"
+        variant="outlined"
+        routerLink="/login"
+        styleClass="cta-secondary"
+      />
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat">
+        <strong>+500</strong>
+        <span>Empresas activas</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <strong>99.9%</strong>
+        <span>Disponibilidad</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <strong>24/7</strong>
+        <span>Soporte técnico</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="dashboard-mockup">
+      <div class="mockup-header">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span class="mockup-title">Dashboard ERP</span>
+      </div>
+      <div class="mockup-body">
+        <div class="mockup-card accent-blue">
+          <i class="pi pi-box"></i>
+          <div>
+            <p class="m-label">Inventario</p>
+            <p class="m-value">1,240 items</p>
+          </div>
+        </div>
+        <div class="mockup-card accent-green">
+          <i class="pi pi-chart-line"></i>
+          <div>
+            <p class="m-label">Ventas hoy</p>
+            <p class="m-value">$84,320</p>
+          </div>
+        </div>
+        <div class="mockup-card accent-purple">
+          <i class="pi pi-users"></i>
+          <div>
+            <p class="m-label">Usuarios</p>
+            <p class="m-value">38 activos</p>
+          </div>
+        </div>
+        <div class="mockup-bar-group">
+          <div class="mockup-bar" style="height: 55%"></div>
+          <div class="mockup-bar" style="height: 80%"></div>
+          <div class="mockup-bar" style="height: 65%"></div>
+          <div class="mockup-bar" style="height: 90%"></div>
+          <div class="mockup-bar" style="height: 72%"></div>
+          <div class="mockup-bar" style="height: 60%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="features">
+  <div class="features-header">
+    <h2>Todo lo que necesitas en un solo lugar</h2>
+    <p>Herramientas diseñadas para optimizar cada proceso de tu negocio</p>
+  </div>
+
+  <div class="features-grid">
+    <p-card *ngFor="let f of features" styleClass="feature-card">
+      <div class="feature-icon">
+        <i [class]="f.icon"></i>
+      </div>
+      <h3>{{ f.title }}</h3>
+      <p>{{ f.description }}</p>
+    </p-card>
+  </div>
+</section>
+
+
+<section class="cta-section">
+  <div class="cta-box">
+    <h2>¿Listo para transformar tu empresa?</h2>
+    <p>Regístrate en menos de 2 minutos y empieza a gestionar hoy mismo.</p>
+    <div class="cta-buttons">
+      <p-button
+        label="Crear cuenta gratis"
+        icon="pi pi-user-plus"
+        size="large"
+        routerLink="/register"
+        styleClass="cta-white"
+      />
+      <p-button
+        label="Iniciar sesión"
+        icon="pi pi-sign-in"
+        size="large"
+        variant="outlined"
+        routerLink="/login"
+        styleClass="cta-outline-white"
+      />
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>© 2025 ERPSystem — Todos los derechos reservados.</p>
+</footer>

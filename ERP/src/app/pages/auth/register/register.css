@@ -1,0 +1,83 @@
+.register-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  padding: 2rem 1rem;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 520px;
+}
+
+.register-header {
+  text-align: center;
+  padding: 1.5rem 1.5rem 0;
+}
+
+.register-header h2 {
+  margin: 0 0 0.25rem;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.register-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+}
+
+.field label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.field label small {
+  font-weight: 400;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.w-full {
+  width: 100% !important;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.password-hints {
+  padding-left: 1.2rem;
+  margin: 0.5rem 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.login-link a {
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}

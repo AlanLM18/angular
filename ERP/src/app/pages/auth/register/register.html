@@ -1,0 +1,170 @@
+<p-toast position="top-right" />
+
+<div class="register-wrapper">
+  <p-card styleClass="register-card">
+    <ng-template pTemplate="header">
+      <div class="register-header">
+        <h2>Crear Cuenta</h2>
+        <p>Completa el formulario para registrarte</p>
+      </div>
+    </ng-template>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+      <p-divider align="left"><b>Información de acceso</b></p-divider>
+
+
+      <div class="field">
+        <label for="username">Usuario *</label>
+        <input
+          pInputText
+          id="username"
+          formControlName="username"
+          placeholder="Ej. juan_perez"
+          [class.ng-invalid]="isInvalid('username')"
+          [class.ng-dirty]="isInvalid('username')"
+          class="w-full"
+        />
+        <p-message *ngIf="isInvalid('username')" severity="error" [text]="getError('username')" />
+      </div>
+
+
+      <div class="field">
+        <label for="email">Correo electrónico *</label>
+        <input
+          pInputText
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="correo@ejemplo.com"
+          [class.ng-invalid]="isInvalid('email')"
+          [class.ng-dirty]="isInvalid('email')"
+          class="w-full"
+        />
+        <p-message *ngIf="isInvalid('email')" severity="error" [text]="getError('email')" />
+      </div>
+
+
+      <div class="field">
+        <label for="password">Contraseña *</label>
+        <p-password
+          id="password"
+          formControlName="password"
+          placeholder="Mín. 10 chars, mayúscula, número y símbolo"
+          [toggleMask]="true"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+          [class.ng-invalid]="isInvalid('password')"
+          [class.ng-dirty]="isInvalid('password')"
+        >
+          <ng-template pTemplate="footer">
+            <p-divider />
+            <ul class="password-hints">
+              <li>Al menos 10 caracteres</li>
+              <li>Al menos 1 letra mayúscula</li>
+              <li>Al menos 1 número</li>
+              <li>Al menos 1 símbolo: ! @ # $ % ^ &amp; * ( ) _ - + =</li>
+            </ul>
+          </ng-template>
+        </p-password>
+        <p-message *ngIf="isInvalid('password')" severity="error" [text]="getError('password')" />
+      </div>
+
+
+      <div class="field">
+        <label for="confirmPassword">Confirmar contraseña *</label>
+        <p-password
+          id="confirmPassword"
+          formControlName="confirmPassword"
+          placeholder="Repite tu contraseña"
+          [toggleMask]="true"
+          [feedback]="false"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+          [class.ng-invalid]="isInvalid('confirmPassword') || passwordMismatch"
+          [class.ng-dirty]="isInvalid('confirmPassword') || passwordMismatch"
+        />
+        <p-message *ngIf="isInvalid('confirmPassword')" severity="error" text="Confirma tu contraseña." />
+        <p-message *ngIf="passwordMismatch && !isInvalid('confirmPassword')" severity="error" text="Las contraseñas no coinciden." />
+      </div>
+
+      <p-divider align="left"><b>Información personal</b></p-divider>
+
+
+      <div class="field">
+        <label for="fullName">Nombre completo *</label>
+        <input
+          pInputText
+          id="fullName"
+          formControlName="fullName"
+          placeholder="Ej. Juan Pérez García"
+          [class.ng-invalid]="isInvalid('fullName')"
+          [class.ng-dirty]="isInvalid('fullName')"
+          class="w-full"
+        />
+        <p-message *ngIf="isInvalid('fullName')" severity="error" [text]="getError('fullName')" />
+      </div>
+
+      <div class="field">
+        <label for="birthDate">Fecha de nacimiento * <small>(debes ser mayor de 18 años)</small></label>
+        <input
+          pInputText
+          type="date"
+          id="birthDate"
+          formControlName="birthDate"
+          [max]="maxDate"
+          [class.ng-invalid]="isInvalid('birthDate')"
+          [class.ng-dirty]="isInvalid('birthDate')"
+          class="w-full"
+        />
+        <p-message *ngIf="isInvalid('birthDate')" severity="error" [text]="getError('birthDate')" />
+      </div>
+
+
+      <div class="field">
+        <label for="phone">Número de teléfono * <small>(10 dígitos)</small></label>
+        <input
+          pInputText
+          type="tel"
+          id="phone"
+          formControlName="phone"
+          placeholder="Ej. 5512345678"
+          maxlength="10"
+          [class.ng-invalid]="isInvalid('phone')"
+          [class.ng-dirty]="isInvalid('phone')"
+          class="w-full"
+        />
+        <p-message *ngIf="isInvalid('phone')" severity="error" [text]="getError('phone')" />
+      </div>
+
+
+      <div class="field">
+        <label for="address">Dirección *</label>
+        <input
+          pInputText
+          id="address"
+          formControlName="address"
+          placeholder="Calle, número, colonia, ciudad"
+          [class.ng-invalid]="isInvalid('address')"
+          [class.ng-dirty]="isInvalid('address')"
+          class="w-full"
+        />
+        <p-message *ngIf="isInvalid('address')" severity="error" [text]="getError('address')" />
+      </div>
+
+
+      <p-button
+        type="submit"
+        label="Registrarme"
+        icon="pi pi-user-plus"
+        styleClass="w-full mt-2"
+        [disabled]="submitted && form.invalid"
+      />
+
+      <div class="login-link">
+        ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión aquí</a>
+      </div>
+
+    </form>
+  </p-card>
+</div>
