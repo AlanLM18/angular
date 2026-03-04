@@ -1,0 +1,56 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Users</h2>
+      <p class="page-sub">Gestión de usuarios del sistema</p>
+    </div>
+    <p-button label="Nuevo usuario" icon="pi pi-user-plus" size="small" />
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-row">
+    <div class="sum-card">
+      <span class="sum-label">Total</span>
+      <span class="sum-value">{{ users.length }}</span>
+    </div>
+    <div class="sum-card green">
+      <span class="sum-label">Activos</span>
+      <span class="sum-value">{{ activeCount }}</span>
+    </div>
+    <div class="sum-card red">
+      <span class="sum-label">Inactivos</span>
+      <span class="sum-value">{{ inactiveCount }}</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <i class="pi pi-search"></i>
+    <input pInputText [(ngModel)]="search" placeholder="Buscar usuario..." class="search-input" />
+  </div>
+
+  <!-- Users list -->
+  <div class="users-list">
+    <div *ngFor="let u of filtered" class="user-row">
+      <div class="user-avatar">{{ u.name.charAt(0) }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ u.name }}</span>
+        <span class="user-email">{{ u.email }}</span>
+      </div>
+      <span class="user-group">{{ u.group }}</span>
+      <p-tag [value]="u.role" severity="info" styleClass="role-tag" />
+      <p-tag
+        [value]="u.status === 'active' ? 'Activo' : 'Inactivo'"
+        [severity]="u.status === 'active' ? 'success' : 'danger'" />
+      <div class="user-actions">
+        <button class="action-btn" pTooltip="Editar"><i class="pi pi-pencil"></i></button>
+        <button class="action-btn danger" pTooltip="Eliminar"><i class="pi pi-trash"></i></button>
+      </div>
+    </div>
+
+    <div *ngIf="filtered.length === 0" class="empty-state">
+      <i class="pi pi-search"></i>
+      <p>No se encontraron usuarios</p>
+    </div>
+  </div>
+</div>

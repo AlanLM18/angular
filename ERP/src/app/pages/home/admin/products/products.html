@@ -1,0 +1,32 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Products</h2>
+      <p class="page-sub">Administra el inventario de productos</p>
+    </div>
+    <p-button label="Nuevo producto" icon="pi pi-plus" size="small" />
+  </div>
+
+
+  <div class="summary-row">
+    <div class="sum-card">
+      <span class="sum-label">Total</span>
+      <span class="sum-value">{{ products.length }}</span>
+    </div>
+  </div>
+
+  <div class="products-grid">
+    <div *ngFor="let p of products" class="product-card">
+      <div class="product-top">
+        <div class="product-icon"><i class="pi pi-box"></i></div>
+        <p-tag [value]="getStatusLabel(p.status)" [severity]="getSeverity(p.status)" />
+      </div>
+      <h4 class="product-name">{{ p.name }}</h4>
+      <span class="product-category">{{ p.category }}</span>
+      <div class="product-bottom">
+        <span class="product-price">${{ p.price | number }}</span>
+        <span class="product-stock">Stock: {{ p.stock }}</span>
+      </div>
+    </div>
+  </div>
+</div>

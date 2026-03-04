@@ -1,0 +1,74 @@
+<div class="home-wrapper">
+
+  <!-- Header -->
+  <div class="home-header">
+    <div>
+      <h2 class="home-title">Home / User</h2>
+      <p class="home-sub">{{ today | date:'EEEE, d MMMM yyyy' }}</p>
+    </div>
+    <p-tag value="Bienvenido, Admin" icon="pi pi-user" severity="info" />
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-grid">
+    <a *ngFor="let s of summary" [routerLink]="s.route" class="sum-card sum-{{s.color}}">
+      <div class="sum-icon"><i [class]="s.icon"></i></div>
+      <div class="sum-body">
+        <span class="sum-label">{{ s.label }}</span>
+        <span class="sum-value">{{ s.value }}</span>
+      </div>
+      <i class="pi pi-arrow-right sum-arrow"></i>
+    </a>
+  </div>
+
+  <!-- Quick access row -->
+  <div class="quick-row">
+
+    <p-card styleClass="quick-card" header="Accesos rápidos">
+      <div class="quick-grid">
+        <a routerLink="/home/dashboard" class="quick-item">
+          <div class="qi-icon blue"><i class="pi pi-home"></i></div>
+          <span>Dashboard</span>
+        </a>
+        <a routerLink="/home/products" class="quick-item">
+          <div class="qi-icon green"><i class="pi pi-box"></i></div>
+          <span>Products</span>
+        </a>
+        <a routerLink="/home/users" class="quick-item">
+          <div class="qi-icon purple"><i class="pi pi-users"></i></div>
+          <span>Users</span>
+        </a>
+        <a routerLink="/home/groups" class="quick-item">
+          <div class="qi-icon orange"><i class="pi pi-sitemap"></i></div>
+          <span>Groups</span>
+        </a>
+      </div>
+    </p-card>
+
+    <p-card styleClass="quick-card" header="Estado del sistema">
+      <div class="status-list">
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-label">API</span>
+          <p-tag value="Online" severity="success" />
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-label">Base de datos</span>
+          <p-tag value="Online" severity="success" />
+        </div>
+        <div class="status-row">
+          <span class="status-dot yellow"></span>
+          <span class="status-label">Backups</span>
+          <p-tag value="Pendiente" severity="warn" />
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-label">Versión</span>
+          <p-tag value="v2.4" severity="secondary" />
+        </div>
+      </div>
+    </p-card>
+
+  </div>
+</div>

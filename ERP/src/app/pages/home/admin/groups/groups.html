@@ -1,0 +1,38 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Groups</h2>
+      <p class="page-sub">Administra los grupos y permisos del sistema</p>
+    </div>
+    <p-button label="Nuevo grupo" icon="pi pi-plus" size="small" />
+  </div>
+
+  <div class="groups-grid">
+    <div *ngFor="let g of groups" class="group-card">
+      <div class="group-color-bar" [style.background]="g.color"></div>
+      <div class="group-content">
+        <div class="group-top">
+          <div class="group-icon" [style.background]="g.color + '20'" [style.color]="g.color">
+            <i class="pi pi-sitemap"></i>
+          </div>
+          <div>
+            <h4 class="group-name">{{ g.name }}</h4>
+            <p class="group-desc">{{ g.description }}</p>
+          </div>
+        </div>
+        <div class="group-meta">
+          <span class="members-badge">
+            <i class="pi pi-users"></i> {{ g.members }} miembros
+          </span>
+        </div>
+        <div class="permissions-row">
+          <p-tag *ngFor="let p of g.permissions" [value]="p" severity="secondary" styleClass="perm-tag" />
+        </div>
+        <div class="group-actions">
+          <p-button label="Ver miembros" icon="pi pi-users" size="small" severity="secondary" />
+          <p-button icon="pi pi-pencil" size="small" [text]="true" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

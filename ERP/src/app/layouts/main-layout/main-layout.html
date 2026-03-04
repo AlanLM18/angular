@@ -1,0 +1,8 @@
+<div class="layout-wrapper" [class.sidebar-collapsed]="sidebarCollapsed">
+  <app-sidebar
+    [(collapsed)]="sidebarCollapsed"
+  />
+  <main class="layout-content">
+    <router-outlet />
+  </main>
+</div>

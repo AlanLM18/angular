@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-
+// PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
@@ -72,8 +72,8 @@ export class LoginComponent {
         summary: '¡Bienvenido!',
         detail: `Hola, ${this.username}. Ingreso exitoso.`,
       });
-
-      setTimeout(() => this.router.navigate(['/dashboard']), 1500);
+      // Navega tras un pequeño delay para que el toast se vea
+      setTimeout(() => this.router.navigate(['/home']), 1500);
     } else {
       this.messageService.add({
         severity: 'error',

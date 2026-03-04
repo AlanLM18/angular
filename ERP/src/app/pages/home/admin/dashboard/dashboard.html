@@ -1,0 +1,38 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Dashboard</h2>
+      <p class="page-sub">Resumen general del sistema</p>
+    </div>
+    <p-tag value="Admin" severity="info" />
+  </div>
+
+  <div class="stats-row">
+    <div *ngFor="let s of stats" class="stat-card stat-{{s.color}}">
+      <div class="stat-icon"><i [class]="s.icon"></i></div>
+      <div class="stat-body">
+        <span class="stat-label">{{ s.label }}</span>
+        <span class="stat-value">{{ s.value }}</span>
+      </div>
+      <span class="stat-badge">{{ s.change }}</span>
+    </div>
+  </div>
+
+  <div class="cards-row">
+    <p-card header="N. Projects" styleClass="info-card">
+      <p>Gestiona y monitorea todos los proyectos activos del sistema.</p>
+      <ng-template pTemplate="footer">
+        <p-button label="Ver proyectos" icon="pi pi-arrow-right" iconPos="right" size="small" />
+      </ng-template>
+    </p-card>
+
+    <p-card header="Rutas activas" styleClass="info-card">
+      <p>Revisa el estado de todas las rutas configuradas en el sistema.</p>
+      <ng-template pTemplate="footer">
+        <p-button label="Ver rutas" icon="pi pi-arrow-right" iconPos="right" size="small" severity="secondary" />
+      </ng-template>
+    </p-card>
+
+
+  </div>
+</div>
