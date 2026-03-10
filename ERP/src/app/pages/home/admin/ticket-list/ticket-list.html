@@ -1,0 +1,95 @@
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Lista de Tickets</h2>
+      <p class="page-sub">{{ filtered.length }} ticket(s) encontrados</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/home/tickets" class="btn-secondary">
+        <i class="pi pi-th-large"></i> Vista Kanban
+      </a>
+      <p-button *hasPermission="'ticket:add'"
+        label="Crear ticket" icon="pi pi-plus"
+        routerLink="/home/tickets" />
+    </div>
+  </div>
+
+  <!-- Filtros rápidos -->
+  <div class="filters-row">
+    <button class="filter-btn" [class.active]="activeQuick==='all'"        (click)="activeQuick='all'">        <i class="pi pi-th-large"></i> Todos</button>
+    <button class="filter-btn" [class.active]="activeQuick==='mine'"       (click)="activeQuick='mine'">       <i class="pi pi-user"></i> Mis tickets</button>
+    <button class="filter-btn" [class.active]="activeQuick==='unassigned'" (click)="activeQuick='unassigned'"> <i class="pi pi-user-minus"></i> Sin asignar</button>
+    <button class="filter-btn" [class.active]="activeQuick==='high'"       (click)="activeQuick='high'">       <i class="pi pi-arrow-up"></i> Prioridad alta</button>
+    <button class="filter-btn clear" (click)="clearFilters()">
+      <i class="pi pi-filter-slash"></i> Limpiar
+    </button>
+  </div>
+
+  <!-- Tabla -->
+  <div class="table-wrapper">
+    <!-- Búsqueda global -->
+    <div class="search-bar">
+      <i class="pi pi-search"></i>
+      <input pInputText [(ngModel)]="searchText" placeholder="Buscar por título..." />
+    </div>
+
+    <table class="tickets-table">
+      <thead>
+        <tr>
+          <th (click)="sort('id')" class="sortable">ID <i [class]="sortIcon('id')"></i></th>
+          <th (click)="sort('title')" class="sortable">Título <i [class]="sortIcon('title')"></i></th>
+          <th>
+            <p-select [(ngModel)]="filterStatus" [options]="statuses"
+              placeholder="Estado" styleClass="th-select" />
+          </th>
+          <th>
+            <p-select [(ngModel)]="filterPriority" [options]="priorities"
+              placeholder="Prioridad" styleClass="th-select" />
+          </th>
+          <th>
+            <input pInputText [(ngModel)]="filterAssigned"
+              placeholder="Asignado a" class="th-input" />
+          </th>
+          <th (click)="sort('dueDate')" class="sortable">Fecha límite <i [class]="sortIcon('dueDate')"></i></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of filtered" class="ticket-row">
+          <td class="td-id">#{{ t.id }}</td>
+          <td class="td-title">
+            <a [routerLink]="['/home/ticket', t.id]">{{ t.title }}</a>
+          </td>
+          <td><p-tag [value]="t.status" [severity]="getStatusSeverity(t.status)" /></td>
+          <td>
+            <p-tag [value]="t.priority" [severity]="getPrioritySeverity(t.priority)" />
+            <span class="priority-sub">{{ priorityLabels[t.priority].split('—')[1]?.trim() }}</span>
+          </td>
+          <td>
+            <div class="assigned-chip" *ngIf="t.assignedTo">
+              <div class="mini-avatar">{{ t.assignedTo.charAt(0).toUpperCase() }}</div>
+              {{ t.assignedTo }}
+            </div>
+            <span *ngIf="!t.assignedTo" class="unassigned">Sin asignar</span>
+          </td>
+          <td class="td-date">
+            <span *ngIf="t.dueDate">{{ t.dueDate | date:'d MMM yyyy' }}</span>
+            <span *ngIf="!t.dueDate" class="unassigned">—</span>
+          </td>
+          <td>
+            <a [routerLink]="['/home/ticket', t.id]" class="view-btn">
+              <i class="pi pi-eye"></i>
+            </a>
+          </td>
+        </tr>
+        <tr *ngIf="filtered.length === 0">
+          <td colspan="7" class="empty-row">
+            <i class="pi pi-inbox"></i> No hay tickets que coincidan con los filtros.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

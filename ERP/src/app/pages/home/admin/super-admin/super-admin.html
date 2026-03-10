@@ -1,0 +1,112 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title"><i class="pi pi-shield"></i> Super Admin</h2>
+      <p class="page-sub">Gestión de usuarios y permisos del sistema</p>
+    </div>
+    <p-button label="Nuevo usuario" icon="pi pi-plus" (onClick)="openCreate()" />
+  </div>
+
+  <!-- Users table -->
+  <div class="users-table-wrapper">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th>Permisos activos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of users" class="user-row">
+          <td>
+            <div class="user-chip">
+              <div class="user-avatar">{{ u.username.charAt(0).toUpperCase() }}</div>
+              <div>
+                <div class="user-name">{{ u.fullName }}</div>
+                <div class="user-username">@{{ u.username }}</div>
+              </div>
+              <p-tag *ngIf="u.username === 'superAdmin'" value="SuperAdmin" severity="danger" styleClass="sa-tag" />
+            </div>
+          </td>
+          <td class="td-email">{{ u.email }}</td>
+          <td>
+            <div class="perms-chips">
+              <span *ngFor="let p of u.permissions.slice(0,4)" class="perm-chip">{{ p }}</span>
+              <span *ngIf="u.permissions.length > 4" class="perm-more">+{{ u.permissions.length - 4 }} más</span>
+            </div>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-key" label="Permisos" size="small" severity="info"
+                [outlined]="true" (onClick)="openPerms(u)" />
+              <p-button icon="pi pi-pencil" size="small" severity="secondary"
+                [outlined]="true" (onClick)="openEdit(u)" />
+              <p-button icon="pi pi-trash" size="small" severity="danger"
+                [outlined]="true" (onClick)="confirmDelete(u)" />
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Dialog crear/editar usuario -->
+<p-dialog [(visible)]="showDialog"
+  [header]="isEditing ? 'Editar usuario' : 'Nuevo usuario'"
+  [modal]="true" [style]="{ width: '420px' }" [draggable]="false">
+
+  <div class="form-grid">
+    <div class="field">
+      <label>Nombre completo *</label>
+      <input pInputText [(ngModel)]="current.fullName" placeholder="Nombre completo" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Username *</label>
+      <input pInputText [(ngModel)]="current.username" placeholder="username" class="w-full" [disabled]="isEditing" />
+    </div>
+    <div class="field">
+      <label>Email *</label>
+      <input pInputText type="email" [(ngModel)]="current.email" placeholder="email@erp.com" class="w-full" />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showDialog = false" />
+    <p-button [label]="isEditing ? 'Guardar' : 'Crear'" icon="pi pi-check" (onClick)="save()" />
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog gestión de permisos -->
+<p-dialog [(visible)]="showPermsDialog"
+  [header]="'Permisos de @' + selectedUser?.username"
+  [modal]="true" [style]="{ width: '520px' }" [draggable]="false">
+
+  <div class="perms-manager" *ngIf="selectedUser">
+    <div *ngFor="let group of permGroups" class="perm-group">
+      <div class="perm-group-header">
+        <i [class]="group.icon"></i>
+        <span>{{ group.label }}</span>
+      </div>
+      <div class="perm-checks">
+        <div *ngFor="let p of group.perms" class="perm-check"
+          [class.active]="hasPerm(p)" (click)="togglePerm(p)">
+          <i class="pi" [class.pi-check-square]="hasPerm(p)" [class.pi-stop]="!hasPerm(p)"></i>
+          <span>{{ p }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showPermsDialog = false" />
+    <p-button label="Guardar permisos" icon="pi pi-key" (onClick)="savePerms()" />
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,42 @@
+.page-wrapper { padding: 2rem; background: #f1f5f9; min-height: 100vh; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.page-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0 0 0.2rem; }
+.page-sub { font-size: 0.85rem; color: #64748b; margin: 0; }
+.header-actions { display: flex; gap: 0.75rem; align-items: center; }
+.btn-secondary { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; color: #475569; text-decoration: none; font-weight: 500; }
+.btn-secondary:hover { background: #f1f5f9; }
+
+.filters-row { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.filter-btn { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.9rem; background: white; border: 1.5px solid #e2e8f0; border-radius: 999px; font-size: 0.8rem; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.15s; }
+.filter-btn:hover { border-color: #a5b4fc; color: #6366f1; }
+.filter-btn.active { background: #6366f1; border-color: #6366f1; color: white; }
+.filter-btn.clear { color: #ef4444; border-color: #fecaca; }
+.filter-btn.clear:hover { background: #fef2f2; }
+
+.table-wrapper { background: white; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; }
+.search-bar { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; }
+.search-bar i { color: #94a3b8; }
+.search-bar input { border: none; outline: none; font-size: 0.9rem; flex: 1; background: transparent; }
+
+.tickets-table { width: 100%; border-collapse: collapse; }
+.tickets-table thead tr { background: #f8fafc; }
+.tickets-table th { padding: 0.75rem 1rem; font-size: 0.78rem; font-weight: 700; color: #64748b; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: #6366f1; }
+.sortable i { margin-left: 0.25rem; font-size: 0.7rem; }
+:host ::ng-deep .th-select .p-select { border: none !important; background: transparent !important; font-size: 0.78rem; font-weight: 700; color: #64748b; }
+.th-input { border: none; outline: none; background: transparent; font-size: 0.78rem; font-weight: 700; color: #64748b; width: 100px; }
+
+.ticket-row td { padding: 0.85rem 1rem; border-bottom: 1px solid #f8fafc; font-size: 0.85rem; vertical-align: middle; }
+.ticket-row:hover { background: #f8fafc; }
+.td-id { color: #94a3b8; font-weight: 600; font-size: 0.78rem; }
+.td-title a { font-weight: 600; color: #1e293b; text-decoration: none; }
+.td-title a:hover { color: #6366f1; }
+.priority-sub { font-size: 0.72rem; color: #94a3b8; display: block; }
+.assigned-chip { display: flex; align-items: center; gap: 0.4rem; }
+.mini-avatar { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: white; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.unassigned { color: #cbd5e1; font-size: 0.8rem; }
+.td-date { color: #64748b; font-size: 0.82rem; }
+.view-btn { color: #6366f1; font-size: 1rem; padding: 0.25rem; }
+.view-btn:hover { color: #4f46e5; }
+.empty-row { text-align: center; padding: 3rem !important; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
