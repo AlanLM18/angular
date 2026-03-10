@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-// PrimeNG
+
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
@@ -13,8 +13,10 @@ import { MessageService } from 'primeng/api';
 import { CardModule } from 'primeng/card';
 
 
+import { PermissionsService } from '../../../core/permissions';
+
 const VALID_CREDENTIALS = [
-  { username: 'admin', password: 'Admin@12345' },
+  { username: 'admin',    password: 'Admin@12345' },
   { username: 'usuario1', password: 'User@67890!' },
 ];
 
@@ -22,14 +24,10 @@ const VALID_CREDENTIALS = [
   selector: 'app-login',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    InputTextModule,
-    PasswordModule,
-    ButtonModule,
-    MessageModule,
-    ToastModule,
-    CardModule,
+    CommonModule, FormsModule,
+    InputTextModule, PasswordModule,
+    ButtonModule, MessageModule,
+    ToastModule, CardModule,
   ],
   providers: [MessageService],
   templateUrl: './login.html',
@@ -40,15 +38,14 @@ export class LoginComponent {
   password = '';
   submitted = false;
 
-  constructor(private messageService: MessageService, private router: Router) {}
+  constructor(
+    private messageService: MessageService,
+    private router: Router,
+    private permissionsService: PermissionsService,
+  ) {}
 
-  get usernameInvalid() {
-    return this.submitted && !this.username.trim();
-  }
-
-  get passwordInvalid() {
-    return this.submitted && !this.password.trim();
-  }
+  get usernameInvalid() { return this.submitted && !this.username.trim(); }
+  get passwordInvalid()  { return this.submitted && !this.password.trim(); }
 
   login() {
     this.submitted = true;
@@ -67,12 +64,15 @@ export class LoginComponent {
     );
 
     if (found) {
+      // Asignar permisos según el usuario que inició sesión
+      this.permissionsService.setUserPermissions(found.username);
+
       this.messageService.add({
         severity: 'success',
         summary: '¡Bienvenido!',
         detail: `Hola, ${this.username}. Ingreso exitoso.`,
       });
-      // Navega tras un pequeño delay para que el toast se vea
+
       setTimeout(() => this.router.navigate(['/home']), 1500);
     } else {
       this.messageService.add({

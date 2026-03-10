@@ -21,8 +21,8 @@ export class SidebarComponent {
   ];
 
   pageItems = [
-    { label: 'Users',      icon: 'pi pi-users',      route: '/home/users'  },
-    { label: 'Groups',     icon: 'pi pi-sitemap',    route: '/home/groups' },
+    { label: 'Users',      icon: 'pi pi-users',      route: '/home/users'   },
+    { label: 'Groups',     icon: 'pi pi-sitemap',    route: '/home/groups'  },
   ];
 
   toggle() {

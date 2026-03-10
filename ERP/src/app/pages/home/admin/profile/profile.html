@@ -1,0 +1,113 @@
+<p-toast position="top-right" />
+
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Mi Perfil</h2>
+      <p class="page-sub">Información de tu cuenta</p>
+    </div>
+    <p-tag [value]="profile.role" icon="pi pi-shield" severity="info" />
+  </div>
+
+  <div class="profile-layout">
+
+    <!-- Avatar card -->
+    <p-card styleClass="avatar-card">
+      <div class="avatar-block">
+        <div class="avatar-circle">
+          {{ profile.fullName.charAt(0) }}
+        </div>
+        <h3 class="av-name">{{ profile.fullName }}</h3>
+        <span class="av-username">@{{ profile.username }}</span>
+        <p-tag [value]="profile.role" severity="success" styleClass="av-role" />
+      </div>
+      <p-divider />
+      <div class="av-stats">
+        <div class="av-stat">
+          <span class="av-stat-val">3</span>
+          <span class="av-stat-lbl">Grupos</span>
+        </div>
+        <div class="av-stat">
+          <span class="av-stat-val">24</span>
+          <span class="av-stat-lbl">Tickets</span>
+        </div>
+        <div class="av-stat">
+          <span class="av-stat-val">98%</span>
+          <span class="av-stat-lbl">Actividad</span>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Info card -->
+    <p-card styleClass="info-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>Información personal</h3>
+          <p-button *ngIf="!editing" icon="pi pi-pencil" label="Editar"
+            size="small" severity="secondary" (onClick)="startEdit()" />
+        </div>
+      </ng-template>
+
+      <!-- READ mode -->
+      <div *ngIf="!editing" class="fields-grid">
+        <div class="field-view">
+          <span class="fv-label"><i class="pi pi-user"></i> Nombre completo</span>
+          <span class="fv-value">{{ profile.fullName }}</span>
+        </div>
+        <div class="field-view">
+          <span class="fv-label"><i class="pi pi-at"></i> Usuario</span>
+          <span class="fv-value">{{ profile.username }}</span>
+        </div>
+        <div class="field-view">
+          <span class="fv-label"><i class="pi pi-envelope"></i> Correo</span>
+          <span class="fv-value">{{ profile.email }}</span>
+        </div>
+        <div class="field-view">
+          <span class="fv-label"><i class="pi pi-phone"></i> Teléfono</span>
+          <span class="fv-value">{{ profile.phone }}</span>
+        </div>
+        <div class="field-view full">
+          <span class="fv-label"><i class="pi pi-map-marker"></i> Dirección</span>
+          <span class="fv-value">{{ profile.address }}</span>
+        </div>
+        <div class="field-view">
+          <span class="fv-label"><i class="pi pi-calendar"></i> Fecha de nacimiento</span>
+          <span class="fv-value">{{ profile.birthDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <!-- UPDATE mode -->
+      <div *ngIf="editing" class="fields-grid">
+        <div class="field-edit">
+          <label>Nombre completo</label>
+          <input pInputText [(ngModel)]="draft.fullName" class="w-full" />
+        </div>
+        <div class="field-edit">
+          <label>Usuario</label>
+          <input pInputText [(ngModel)]="draft.username" class="w-full" />
+        </div>
+        <div class="field-edit">
+          <label>Correo electrónico</label>
+          <input pInputText type="email" [(ngModel)]="draft.email" class="w-full" />
+        </div>
+        <div class="field-edit">
+          <label>Teléfono</label>
+          <input pInputText type="tel" [(ngModel)]="draft.phone" maxlength="10" class="w-full" />
+        </div>
+        <div class="field-edit full">
+          <label>Dirección</label>
+          <input pInputText [(ngModel)]="draft.address" class="w-full" />
+        </div>
+
+        <div class="edit-actions full">
+          <p-button label="Cancelar" severity="secondary" [outlined]="true"
+            icon="pi pi-times" (onClick)="cancel()" />
+          <p-button label="Guardar cambios" icon="pi pi-check" (onClick)="save()" />
+        </div>
+      </div>
+
+    </p-card>
+
+  </div>
+</div>

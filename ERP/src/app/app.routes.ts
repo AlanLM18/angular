@@ -46,6 +46,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/home/admin/groups/groups').then((m) => m.GroupsComponent),
       },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./pages/home/admin/profile/profile').then((m) => m.ProfileComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

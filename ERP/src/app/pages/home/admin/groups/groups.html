@@ -1,38 +1,139 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
 <div class="page-wrapper">
+
+  <!-- Header -->
   <div class="page-header">
     <div>
       <h2 class="page-title">Groups</h2>
-      <p class="page-sub">Administra los grupos y permisos del sistema</p>
+      <p class="page-sub">Gestión completa de grupos del sistema</p>
     </div>
-    <p-button label="Nuevo grupo" icon="pi pi-plus" size="small" />
+    <!-- Solo admin puede crear -->
+    <p-button *hasPermission="'group:add'"
+      label="Nuevo grupo" icon="pi pi-plus" (onClick)="openCreate()" />
   </div>
 
-  <div class="groups-grid">
-    <div *ngFor="let g of groups" class="group-card">
-      <div class="group-color-bar" [style.background]="g.color"></div>
-      <div class="group-content">
-        <div class="group-top">
-          <div class="group-icon" [style.background]="g.color + '20'" [style.color]="g.color">
-            <i class="pi pi-sitemap"></i>
-          </div>
-          <div>
-            <h4 class="group-name">{{ g.name }}</h4>
-            <p class="group-desc">{{ g.description }}</p>
-          </div>
-        </div>
-        <div class="group-meta">
-          <span class="members-badge">
-            <i class="pi pi-users"></i> {{ g.members }} miembros
-          </span>
-        </div>
-        <div class="permissions-row">
-          <p-tag *ngFor="let p of g.permissions" [value]="p" severity="secondary" styleClass="perm-tag" />
-        </div>
-        <div class="group-actions">
-          <p-button label="Ver miembros" icon="pi pi-users" size="small" severity="secondary" />
-          <p-button icon="pi pi-pencil" size="small" [text]="true" />
-        </div>
-      </div>
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <i class="pi pi-sitemap"></i>
+      <span>Total: <strong>{{ groups.length }}</strong></span>
+    </div>
+    <div class="stat-chip">
+      <i class="pi pi-users"></i>
+      <span>Integrantes: <strong>{{ totalIntegrantes }}</strong></span>
+    </div>
+    <div class="stat-chip">
+      <i class="pi pi-ticket"></i>
+      <span>Tickets: <strong>{{ totalTickets }}</strong></span>
     </div>
   </div>
+
+  <!-- Groups grid — visible si tiene group:view -->
+  <div *hasPermission="'group:view'" class="groups-grid">
+    <div *ngFor="let g of groups" class="group-card">
+
+      <div class="group-header">
+        <div class="group-avatar">{{ g.nombre.charAt(0) }}</div>
+        <div class="group-title-block">
+          <h4 class="group-name">{{ g.nombre }}</h4>
+          <span class="group-autor">por {{ g.autor }}</span>
+        </div>
+        <p-tag [value]="g.nivel" [severity]="getNivelSeverity(g.nivel)" />
+      </div>
+
+      <p class="group-desc">{{ g.descripcion }}</p>
+
+      <div class="group-meta">
+        <div class="meta-item">
+          <i class="pi pi-users"></i>
+          <span>{{ g.integrantes }} integrantes</span>
+        </div>
+        <div class="meta-item">
+          <i class="pi pi-ticket"></i>
+          <span>{{ g.tickets }} tickets</span>
+        </div>
+      </div>
+
+      <div class="group-actions">
+        <!-- Solo visible con group:edit -->
+        <p-button *hasPermission="'group:edit'"
+          icon="pi pi-pencil" label="Editar" size="small" severity="secondary"
+          (onClick)="openEdit(g)" styleClass="action-btn" />
+
+        <!-- Solo visible con group:delete -->
+        <p-button *hasPermission="'group:delete'"
+          icon="pi pi-trash" label="Eliminar" size="small" severity="danger"
+          [outlined]="true" (onClick)="confirmDelete(g)" styleClass="action-btn" />
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Mensaje si no tiene permiso de ver -->
+  <div *ngIf="!permissionsService.has('group:view')" class="no-permission">
+    <i class="pi pi-lock"></i>
+    <p>No tienes permiso para ver los grupos.</p>
+  </div>
+
 </div>
+
+<!-- Dialog CRUD -->
+<p-dialog
+  [(visible)]="showDialog"
+  [header]="isEditing ? 'Editar grupo' : 'Nuevo grupo'"
+  [modal]="true"
+  [style]="{ width: '480px' }"
+  [draggable]="false">
+
+  <div class="form-grid">
+
+    <div class="field">
+      <label>Nombre *</label>
+      <input pInputText [(ngModel)]="current.nombre" placeholder="Nombre del grupo" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Autor *</label>
+      <input pInputText [(ngModel)]="current.autor" placeholder="Nombre del autor" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Nivel *</label>
+      <div class="nivel-options">
+        <button *ngFor="let n of niveles" class="nivel-btn"
+          [class.selected]="current.nivel === n"
+          (click)="current.nivel = n">
+          {{ n }}
+        </button>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Integrantes</label>
+        <p-inputnumber [(ngModel)]="current.integrantes" [min]="0" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Tickets</label>
+        <p-inputnumber [(ngModel)]="current.tickets" [min]="0" styleClass="w-full" />
+      </div>
+    </div>
+
+    <div class="field full">
+      <label>Descripción</label>
+      <textarea pTextarea [(ngModel)]="current.descripcion"
+        placeholder="Describe el propósito del grupo..."
+        rows="3" class="w-full"></textarea>
+    </div>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showDialog = false" />
+    <p-button [label]="isEditing ? 'Guardar cambios' : 'Crear grupo'"
+      [icon]="isEditing ? 'pi pi-check' : 'pi pi-plus'"
+      (onClick)="save()" />
+  </ng-template>
+</p-dialog>
