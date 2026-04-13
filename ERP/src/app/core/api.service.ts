@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable } from 'rxjs';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://devoted-comfort-production.up.railway.app/api';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
