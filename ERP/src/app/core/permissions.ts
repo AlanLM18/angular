@@ -1,53 +1,31 @@
-// ══════════════════════════════════════════════════════
-//  permissions.ts — archivo central de permisos ERP
-// ══════════════════════════════════════════════════════
-
-export type Permission =
-  | 'group:view'   | 'group:edit'   | 'group:add'   | 'group:delete'
-  | 'ticket:view'  | 'ticket:edit'  | 'ticket:add'  | 'ticket:delete' | 'ticket:edit_state'
-  | 'user:view'    | 'users:view'   | 'user:edit'   | 'user:add'      | 'user:delete'
-  | 'superadmin';
-
-// ── Arreglos por módulo ───────────────────────────────
-export const Grupo: Permission[] = [
-  'group:view', 'group:edit', 'group:add', 'group:delete',
-];
-
-export const Ticket: Permission[] = [
-  'ticket:view', 'ticket:edit', 'ticket:add', 'ticket:delete', 'ticket:edit_state',
-];
-
-export const User: Permission[] = [
-  'user:view', 'users:view', 'user:edit', 'user:add', 'user:delete',
-];
-
-export const CommonUser: Permission[] = [
-  'group:view', 'ticket:view', 'ticket:edit_state', 'user:view', 'user:edit',
-];
-
-// ── Permisos por usuario ──────────────────────────────
-export const USER_PERMISSIONS: Record<string, Permission[]> = {
-  superAdmin: [...Grupo, ...Ticket, ...User, 'superadmin'],
-  admin:      [...Grupo, ...Ticket, ...User],
-  usuario1:   [...CommonUser],
-};
-
-// ── Servicio ──────────────────────────────────────────
 import { Injectable, signal } from '@angular/core';
+
+export type Permission = string;
 
 @Injectable({ providedIn: 'root' })
 export class PermissionsService {
   private activePermissions = signal<Permission[]>([]);
   private activeUser        = signal<string>('');
 
-  setUserPermissions(username: string): void {
+  setUserPermissions(username: string, perms: Permission[] = []): void {
     this.activeUser.set(username);
-    this.activePermissions.set(USER_PERMISSIONS[username] ?? []);
+    this.activePermissions.set(perms);
+  }
+
+  updatePermissions(username: string, perms: Permission[]): void {
+    localStorage.setItem('erp_user_perms', JSON.stringify({ [username]: perms }));
+    if (username === this.activeUser()) {
+      this.activePermissions.set([...perms]);
+    }
   }
 
   clear(): void {
     this.activeUser.set('');
     this.activePermissions.set([]);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+    }
   }
 
   has(permission: Permission): boolean {

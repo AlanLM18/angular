@@ -8,10 +8,9 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { CheckboxModule } from 'primeng/checkbox';
 import { DividerModule } from 'primeng/divider';
 import { MessageService, ConfirmationService } from 'primeng/api';
-import { Permission, Grupo, Ticket, User, USER_PERMISSIONS } from '../../../../core/permissions';
+import { Permission, PermissionsService } from '../../../../core/permissions';
 
 interface ManagedUser {
   username: string;
@@ -20,6 +19,15 @@ interface ManagedUser {
   permissions: Permission[];
 }
 
+// Permisos conocidos para la UI del formulario
+// (el backend los define, aquí solo los mostramos)
+const ALL_KNOWN_PERMISSIONS: { label: string; icon: string; perms: Permission[] }[] = [
+  { label: 'Grupos',   icon: 'pi pi-sitemap', perms: ['group:view',  'group:edit',  'group:add',  'group:delete'] },
+  { label: 'Tickets',  icon: 'pi pi-ticket',  perms: ['ticket:view', 'ticket:edit', 'ticket:add', 'ticket:delete', 'ticket:edit_state'] },
+  { label: 'Usuarios', icon: 'pi pi-users',   perms: ['user:view',   'users:view',  'user:edit',  'user:add',      'user:delete'] },
+  { label: 'Sistema',  icon: 'pi pi-shield',  perms: ['superadmin'] },
+];
+
 @Component({
   selector: 'app-super-admin',
   standalone: true,
@@ -27,26 +35,22 @@ interface ManagedUser {
     CommonModule, FormsModule,
     ButtonModule, CardModule, TagModule,
     DialogModule, InputTextModule, ToastModule,
-    ConfirmDialogModule, CheckboxModule, DividerModule,
+    ConfirmDialogModule, DividerModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './super-admin.html',
   styleUrls: ['./super-admin.css'],
 })
 export class SuperAdminComponent {
+  permGroups = ALL_KNOWN_PERMISSIONS;
+
   users: ManagedUser[] = [
-    { username: 'superAdmin', fullName: 'Super Administrador', email: 'super@erp.com', permissions: [...Grupo, ...Ticket, ...User, 'superadmin'] as Permission[] },
-    { username: 'admin',      fullName: 'Administrador',       email: 'admin@erp.com', permissions: [...USER_PERMISSIONS['admin']] },
-    { username: 'usuario1',   fullName: 'Usuario Uno',         email: 'u1@erp.com',    permissions: [...USER_PERMISSIONS['usuario1']] },
-  ];
-
-  allPermissions: Permission[] = [...Grupo, ...Ticket, ...User, 'superadmin'];
-
-  permGroups = [
-    { label: 'Grupos',   icon: 'pi pi-sitemap', perms: Grupo },
-    { label: 'Tickets',  icon: 'pi pi-ticket',  perms: Ticket },
-    { label: 'Usuarios', icon: 'pi pi-users',   perms: User },
-    { label: 'Sistema',  icon: 'pi pi-shield',  perms: ['superadmin'] as Permission[] },
+    { username: 'superAdmin', fullName: 'Super Administrador', email: 'super@erp.com',
+      permissions: ['group:view','group:edit','group:add','group:delete','ticket:view','ticket:edit','ticket:add','ticket:delete','ticket:edit_state','user:view','users:view','user:edit','user:add','user:delete','superadmin'] },
+    { username: 'admin', fullName: 'Administrador', email: 'admin@erp.com',
+      permissions: ['group:view','group:edit','group:add','group:delete','ticket:view','ticket:edit','ticket:add','ticket:delete','ticket:edit_state','user:view','users:view','user:edit','user:add','user:delete'] },
+    { username: 'usuario1', fullName: 'Usuario Uno', email: 'u1@erp.com',
+      permissions: ['group:view','ticket:view','ticket:edit_state','user:view','user:edit'] },
   ];
 
   showDialog = false;
@@ -111,7 +115,7 @@ export class SuperAdminComponent {
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.users = this.users.filter(x => x.username !== u.username);
-        this.messageService.add({ severity: 'error', summary: 'X — Eliminado', detail: `Usuario "${u.username}" eliminado.` });
+        this.messageService.add({ severity: 'error', summary: 'X — Eliminado', detail: `"${u.username}" eliminado.` });
       },
     });
   }

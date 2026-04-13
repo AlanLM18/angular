@@ -65,7 +65,9 @@
           <td><p-tag [value]="t.status" [severity]="getStatusSeverity(t.status)" /></td>
           <td>
             <p-tag [value]="t.priority" [severity]="getPrioritySeverity(t.priority)" />
-            <span class="priority-sub">{{ priorityLabels[t.priority].split('—')[1]?.trim() }}</span>
+            <span class="priority-sub">{{ getPriorityLabel(t.priority).split('—')[1]?.trim() }}
+
+</span>
           </td>
           <td>
             <div class="assigned-chip" *ngIf="t.assignedTo">

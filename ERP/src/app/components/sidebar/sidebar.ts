@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
 import { PermissionsService } from '../../core/permissions';
@@ -16,20 +16,16 @@ export class SidebarComponent {
   @Input() collapsed = false;
   @Output() collapsedChange = new EventEmitter<boolean>();
 
-  constructor(public permissionsService: PermissionsService) {}
-
-  adminItems = [
-    { label: 'Dashboard',  icon: 'pi pi-home',      route: '/home/dashboard',   perm: null },
-    { label: 'Kanban',     icon: 'pi pi-th-large',  route: '/home/tickets',     perm: 'ticket:view' },
-    { label: 'Lista',      icon: 'pi pi-list',       route: '/home/ticket-list', perm: 'ticket:view' },
-    { label: 'Products',   icon: 'pi pi-box',        route: '/home/products',    perm: null },
+  navItems = [
+    { label: 'Dashboard', icon: 'pi pi-home',    route: '/home/dashboard', perm: null },
+    { label: 'Grupos',    icon: 'pi pi-sitemap', route: '/home/groups',    perm: 'group:view' },
+    { label: 'Usuarios',  icon: 'pi pi-users',   route: '/home/users',     perm: 'user:view' },
   ];
 
-  pageItems = [
-    { label: 'Grupos',     icon: 'pi pi-sitemap',   route: '/home/groups',      perm: 'group:view' },
-    { label: 'Usuarios',   icon: 'pi pi-users',     route: '/home/users',       perm: 'user:view' },
-    { label: 'SuperAdmin', icon: 'pi pi-shield',    route: '/home/super-admin', perm: 'superadmin' },
-  ];
+  constructor(
+    public permissionsService: PermissionsService,
+    private router: Router,
+  ) {}
 
   toggle() {
     this.collapsed = !this.collapsed;
@@ -38,6 +34,11 @@ export class SidebarComponent {
 
   canShow(perm: string | null): boolean {
     if (!perm) return true;
-    return this.permissionsService.has(perm as any);
+    return this.permissionsService.has(perm);
+  }
+
+  logout() {
+    this.permissionsService.clear();
+    this.router.navigate(['/login']);
   }
 }

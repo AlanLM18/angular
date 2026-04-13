@@ -1,39 +1,26 @@
 <p-toast position="top-right" />
 <p-confirmDialog />
 
-<div class="page-wrapper">
+<!-- ══ VISTA 1: LISTA DE GRUPOS ══ -->
+<div *ngIf="view === 'list'" class="page-wrapper">
 
-  <!-- Header -->
   <div class="page-header">
     <div>
-      <h2 class="page-title">Groups</h2>
-      <p class="page-sub">Gestión completa de grupos del sistema</p>
+      <h2 class="page-title">Grupos</h2>
+      <p class="page-sub">Selecciona un grupo para ver sus tickets</p>
     </div>
-    <!-- Solo admin puede crear -->
     <p-button *hasPermission="'group:add'"
       label="Nuevo grupo" icon="pi pi-plus" (onClick)="openCreate()" />
   </div>
 
-  <!-- Stats row -->
   <div class="stats-row">
-    <div class="stat-chip">
-      <i class="pi pi-sitemap"></i>
-      <span>Total: <strong>{{ groups.length }}</strong></span>
-    </div>
-    <div class="stat-chip">
-      <i class="pi pi-users"></i>
-      <span>Integrantes: <strong>{{ totalIntegrantes }}</strong></span>
-    </div>
-    <div class="stat-chip">
-      <i class="pi pi-ticket"></i>
-      <span>Tickets: <strong>{{ totalTickets }}</strong></span>
-    </div>
+    <div class="stat-chip"><i class="pi pi-sitemap"></i><span>Total: <strong>{{ groups.length }}</strong></span></div>
+    <div class="stat-chip"><i class="pi pi-users"></i><span>Integrantes: <strong>{{ totalIntegrantes }}</strong></span></div>
+    <div class="stat-chip"><i class="pi pi-ticket"></i><span>Tickets: <strong>{{ totalTickets }}</strong></span></div>
   </div>
 
-  <!-- Groups grid — visible si tiene group:view -->
   <div *hasPermission="'group:view'" class="groups-grid">
-    <div *ngFor="let g of groups" class="group-card">
-
+    <div *ngFor="let g of groups" class="group-card" (click)="enterGroup(g)">
       <div class="group-header">
         <div class="group-avatar">{{ g.nombre.charAt(0) }}</div>
         <div class="group-title-block">
@@ -42,98 +29,299 @@
         </div>
         <p-tag [value]="g.nivel" [severity]="getNivelSeverity(g.nivel)" />
       </div>
-
       <p class="group-desc">{{ g.descripcion }}</p>
-
       <div class="group-meta">
-        <div class="meta-item">
-          <i class="pi pi-users"></i>
-          <span>{{ g.integrantes }} integrantes</span>
-        </div>
-        <div class="meta-item">
-          <i class="pi pi-ticket"></i>
-          <span>{{ g.tickets }} tickets</span>
+        <div class="meta-item"><i class="pi pi-users"></i><span>{{ g.integrantes }} integrantes</span></div>
+        <div class="meta-item"><i class="pi pi-ticket"></i><span>{{ g.tickets }} tickets</span></div>
+      </div>
+      <div class="group-footer">
+        <span class="enter-hint"><i class="pi pi-arrow-right"></i> Entrar al grupo</span>
+        <div class="group-actions" (click)="$event.stopPropagation()">
+          <p-button *hasPermission="'group:edit'" icon="pi pi-pencil" size="small"
+            severity="secondary" [outlined]="true" (onClick)="openEdit(g, $event)" />
+          <!-- Fix: deleteGroup sin $event -->
+          <p-button *hasPermission="'group:delete'" icon="pi pi-trash" size="small"
+            severity="danger" [outlined]="true" (onClick)="deleteGroup(g)" />
         </div>
       </div>
-
-      <div class="group-actions">
-        <!-- Solo visible con group:edit -->
-        <p-button *hasPermission="'group:edit'"
-          icon="pi pi-pencil" label="Editar" size="small" severity="secondary"
-          (onClick)="openEdit(g)" styleClass="action-btn" />
-
-        <!-- Solo visible con group:delete -->
-        <p-button *hasPermission="'group:delete'"
-          icon="pi pi-trash" label="Eliminar" size="small" severity="danger"
-          [outlined]="true" (onClick)="confirmDelete(g)" styleClass="action-btn" />
-      </div>
-
     </div>
   </div>
 
-  <!-- Mensaje si no tiene permiso de ver -->
   <div *ngIf="!permissionsService.has('group:view')" class="no-permission">
-    <i class="pi pi-lock"></i>
-    <p>No tienes permiso para ver los grupos.</p>
+    <i class="pi pi-lock"></i><p>No tienes permiso para ver los grupos.</p>
   </div>
-
 </div>
 
-<!-- Dialog CRUD -->
-<p-dialog
-  [(visible)]="showDialog"
-  [header]="isEditing ? 'Editar grupo' : 'Nuevo grupo'"
-  [modal]="true"
-  [style]="{ width: '480px' }"
-  [draggable]="false">
+<!-- ══ VISTA 2: DASHBOARD ══ -->
+<div *ngIf="view === 'dashboard' && selectedGroup" class="page-wrapper">
 
-  <div class="form-grid">
-
-    <div class="field">
-      <label>Nombre *</label>
-      <input pInputText [(ngModel)]="current.nombre" placeholder="Nombre del grupo" class="w-full" />
+  <div class="page-header">
+    <div class="header-left">
+      <button class="back-btn" (click)="backToList()">
+        <i class="pi pi-arrow-left"></i> Grupos
+      </button>
+      <div>
+        <h2 class="page-title">{{ selectedGroup.nombre }}</h2>
+        <p class="page-sub">{{ groupTickets.length }} tickets · {{ selectedGroup.integrantes }} integrantes</p>
+      </div>
     </div>
-
-    <div class="field">
-      <label>Autor *</label>
-      <input pInputText [(ngModel)]="current.autor" placeholder="Nombre del autor" class="w-full" />
-    </div>
-
-    <div class="field">
-      <label>Nivel *</label>
-      <div class="nivel-options">
-        <button *ngFor="let n of niveles" class="nivel-btn"
-          [class.selected]="current.nivel === n"
-          (click)="current.nivel = n">
-          {{ n }}
+    <div class="header-actions">
+      <div class="view-toggle">
+        <button class="toggle-opt" [class.active]="dashView === 'kanban'" (click)="dashView = 'kanban'">
+          <i class="pi pi-th-large"></i> Kanban
+        </button>
+        <button class="toggle-opt" [class.active]="dashView === 'table'" (click)="dashView = 'table'">
+          <i class="pi pi-list"></i> Lista
+        </button>
+        <button *hasPermission="'group:edit'" class="toggle-opt"
+          [class.active]="dashView === 'config'" (click)="dashView = 'config'; editingConfig = false">
+          <i class="pi pi-cog"></i> Config
         </button>
       </div>
+      <ng-container *ngIf="dashView !== 'config'">
+        <p-button *hasPermission="'ticket:add'"
+          label="Crear ticket" icon="pi pi-plus" (onClick)="showCreateTicket = true" />
+      </ng-container>
     </div>
-
-    <div class="field-row">
-      <div class="field">
-        <label>Integrantes</label>
-        <p-inputnumber [(ngModel)]="current.integrantes" [min]="0" styleClass="w-full" />
-      </div>
-      <div class="field">
-        <label>Tickets</label>
-        <p-inputnumber [(ngModel)]="current.tickets" [min]="0" styleClass="w-full" />
-      </div>
-    </div>
-
-    <div class="field full">
-      <label>Descripción</label>
-      <textarea pTextarea [(ngModel)]="current.descripcion"
-        placeholder="Describe el propósito del grupo..."
-        rows="3" class="w-full"></textarea>
-    </div>
-
   </div>
 
+  <div *ngIf="dashView !== 'config'" class="dash-stats">
+    <div *ngFor="let s of stats" class="dash-stat" [style.border-left-color]="s.color">
+      <span class="dash-count" [style.color]="s.color">{{ s.count }}</span>
+      <span class="dash-label">{{ s.status }}</span>
+    </div>
+  </div>
+
+  <!-- KANBAN -->
+  <div *ngIf="dashView === 'kanban'" class="kanban-board">
+    <div *ngFor="let status of statuses" class="kanban-col"
+      (dragover)="onDragOver($event)" (drop)="onDrop($event, status)">
+      <div class="col-header" [style.border-color]="getStatusColor(status)">
+        <span class="col-dot" [style.background]="getStatusColor(status)"></span>
+        <span class="col-title">{{ status }}</span>
+        <span class="col-count">{{ byStatus(status).length }}</span>
+      </div>
+      <div class="col-cards">
+        <div *ngFor="let t of byStatus(status)" class="ticket-card"
+          draggable="true" (dragstart)="onDragStart(t)">
+          <div class="tc-top">
+            <span class="tc-id">#{{ t.id }}</span>
+            <p-tag [value]="t.priority" [severity]="getPrioritySeverity(t.priority)" styleClass="priority-tag" />
+          </div>
+          <a [routerLink]="['/home/ticket', t.id]" class="tc-title">{{ t.title }}</a>
+          <div class="tc-bottom">
+            <div class="tc-avatar" [title]="t.assignedTo || 'Sin asignar'">
+              {{ t.assignedTo ? t.assignedTo.charAt(0).toUpperCase() : '?' }}
+            </div>
+            <span class="tc-assigned" *ngIf="t.assignedTo">{{ t.assignedTo }}</span>
+            <span class="tc-date" *ngIf="t.dueDate">
+              <i class="pi pi-calendar"></i> {{ t.dueDate | date:'d MMM' }}
+            </span>
+          </div>
+        </div>
+        <div *ngIf="byStatus(status).length === 0" class="col-empty">
+          <i class="pi pi-inbox"></i><span>Sin tickets</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div *ngIf="dashView === 'table'" class="table-section">
+    <div class="table-toolbar">
+      <div class="quick-filters">
+        <button class="filter-btn" [class.active]="tableFilter==='all'"        (click)="tableFilter='all'">        <i class="pi pi-th-large"></i> Todos</button>
+        <button class="filter-btn" [class.active]="tableFilter==='mine'"       (click)="tableFilter='mine'">       <i class="pi pi-user"></i> Mis tickets</button>
+        <button class="filter-btn" [class.active]="tableFilter==='unassigned'" (click)="tableFilter='unassigned'"> <i class="pi pi-user-minus"></i> Sin asignar</button>
+        <button class="filter-btn" [class.active]="tableFilter==='high'"       (click)="tableFilter='high'">       <i class="pi pi-arrow-up"></i> Alta prioridad</button>
+      </div>
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input [(ngModel)]="tableSearch" placeholder="Buscar ticket..." />
+      </div>
+    </div>
+    <table class="tickets-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Título</th><th>Estado</th>
+          <th>Prioridad</th><th>Asignado a</th><th>Fecha límite</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of filteredTable" class="ticket-row">
+          <td class="td-id">#{{ t.id }}</td>
+          <td class="td-title"><a [routerLink]="['/home/ticket', t.id]">{{ t.title }}</a></td>
+          <td><p-tag [value]="t.status" [severity]="getStatusSeverity(t.status)" /></td>
+          <td><p-tag [value]="t.priority" [severity]="getPrioritySeverity(t.priority)" /></td>
+          <td>
+            <div class="assigned-chip" *ngIf="t.assignedTo">
+              <div class="mini-avatar">{{ t.assignedTo.charAt(0).toUpperCase() }}</div>
+              {{ t.assignedTo }}
+            </div>
+            <span *ngIf="!t.assignedTo" class="unassigned">Sin asignar</span>
+          </td>
+          <td class="td-date">{{ t.dueDate ? (t.dueDate | date:'d MMM yyyy') : '—' }}</td>
+        </tr>
+        <tr *ngIf="filteredTable.length === 0">
+          <td colspan="6" class="empty-row"><i class="pi pi-inbox"></i> Sin tickets.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CONFIG -->
+  <div *ngIf="dashView === 'config'" class="config-layout">
+    <div class="config-panel">
+      <div class="config-section-header">
+        <h3><i class="pi pi-sliders-h"></i> Configuración del grupo</h3>
+        <div class="config-header-actions">
+          <ng-container *ngIf="!editingConfig">
+            <p-button *hasPermission="'group:edit'"
+              icon="pi pi-pencil" label="Editar" size="small" severity="secondary"
+              [outlined]="true" (onClick)="startEditConfig()" />
+          </ng-container>
+          <ng-container *ngIf="editingConfig">
+            <p-button icon="pi pi-check" label="Guardar" size="small" (onClick)="saveConfig()" />
+            <p-button icon="pi pi-times" label="Cancelar" size="small" severity="secondary"
+              [outlined]="true" (onClick)="cancelConfig()" />
+          </ng-container>
+        </div>
+      </div>
+
+      <div *ngIf="!editingConfig" class="config-fields-view">
+        <div class="config-field">
+          <span class="cf-label"><i class="pi pi-tag"></i> Nombre</span>
+          <span class="cf-value">{{ selectedGroup.nombre }}</span>
+        </div>
+        <div class="config-field">
+          <span class="cf-label"><i class="pi pi-align-left"></i> Descripción</span>
+          <span class="cf-value">{{ selectedGroup.descripcion || '—' }}</span>
+        </div>
+        <div class="config-field">
+          <span class="cf-label"><i class="pi pi-chart-bar"></i> Nivel</span>
+          <p-tag [value]="selectedGroup.nivel" [severity]="getNivelSeverity(selectedGroup.nivel)" />
+        </div>
+      </div>
+
+      <div *ngIf="editingConfig" class="config-fields-edit">
+        <div class="field">
+          <label>Nombre del grupo *</label>
+          <input pInputText [(ngModel)]="configDraft.nombre" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Descripción</label>
+          <textarea pTextarea [(ngModel)]="configDraft.descripcion" rows="3" class="w-full"></textarea>
+        </div>
+        <div class="field">
+          <label>Nivel</label>
+          <div class="nivel-options">
+            <button *ngFor="let n of niveles" class="nivel-btn"
+              [class.selected]="configDraft.nivel === n" (click)="configDraft.nivel = n">{{ n }}</button>
+          </div>
+        </div>
+      </div>
+
+      <div *hasPermission="'group:delete'" class="danger-zone">
+        <h4><i class="pi pi-exclamation-triangle"></i> Zona peligrosa</h4>
+        <p>Eliminar este grupo borrará toda su configuración. Los tickets no se eliminarán.</p>
+        <!-- Fix: deleteGroup sin $event -->
+        <p-button label="Eliminar grupo" icon="pi pi-trash" severity="danger"
+          [outlined]="true" size="small" (onClick)="deleteGroup(selectedGroup)" />
+      </div>
+    </div>
+
+    <div class="members-panel">
+      <div class="config-section-header">
+        <h3><i class="pi pi-users"></i> Integrantes <span class="member-count">{{ selectedGroup.members.length }}</span></h3>
+      </div>
+      <div *hasPermission="'group:edit'" class="add-member-form">
+        <div class="add-member-row">
+          <input pInputText [(ngModel)]="addNameInput"  placeholder="Nombre completo" class="add-input" />
+          <input pInputText [(ngModel)]="addEmailInput" placeholder="Email"           class="add-input" />
+          <select [(ngModel)]="addRoleInput" class="role-select">
+            <option *ngFor="let r of memberRoles" [value]="r">{{ r }}</option>
+          </select>
+          <p-button icon="pi pi-user-plus" label="Añadir" size="small" (onClick)="addMember()" />
+        </div>
+      </div>
+      <div class="members-list">
+        <div *ngFor="let m of selectedGroup.members" class="member-row">
+          <div class="member-avatar">{{ m.name.charAt(0).toUpperCase() }}</div>
+          <div class="member-info">
+            <span class="member-name">{{ m.name }}</span>
+            <span class="member-email">{{ m.email }}</span>
+          </div>
+          <span class="member-role-badge" [class]="'role-' + m.role.toLowerCase()">{{ m.role }}</span>
+          <p-button *hasPermission="'group:edit'" icon="pi pi-times" size="small"
+            severity="danger" [outlined]="true" [rounded]="true"
+            (onClick)="confirmRemoveMember(m)" />
+        </div>
+        <div *ngIf="selectedGroup.members.length === 0" class="empty-members">
+          <i class="pi pi-users"></i><span>Sin integrantes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Dialog CRUD Grupo ══ -->
+<p-dialog [(visible)]="showDialog" [header]="isEditing ? 'Editar grupo' : 'Nuevo grupo'"
+  [modal]="true" [style]="{ width: '480px' }" [draggable]="false">
+  <div class="form-grid">
+    <div class="field"><label>Nombre *</label>
+      <input pInputText [(ngModel)]="current.nombre" class="w-full" /></div>
+    <div class="field"><label>Autor *</label>
+      <input pInputText [(ngModel)]="current.autor" class="w-full" /></div>
+    <div class="field"><label>Nivel *</label>
+      <div class="nivel-options">
+        <button *ngFor="let n of niveles" class="nivel-btn"
+          [class.selected]="current.nivel === n" (click)="current.nivel = n">{{ n }}</button>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Integrantes</label>
+        <p-inputnumber [(ngModel)]="current.integrantes" [min]="0" styleClass="w-full" /></div>
+      <div class="field"><label>Tickets</label>
+        <p-inputnumber [(ngModel)]="current.tickets" [min]="0" styleClass="w-full" /></div>
+    </div>
+    <div class="field full"><label>Descripción</label>
+      <textarea pTextarea [(ngModel)]="current.descripcion" rows="3" class="w-full"></textarea></div>
+  </div>
   <ng-template pTemplate="footer">
     <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showDialog = false" />
     <p-button [label]="isEditing ? 'Guardar cambios' : 'Crear grupo'"
-      [icon]="isEditing ? 'pi pi-check' : 'pi pi-plus'"
-      (onClick)="save()" />
+      [icon]="isEditing ? 'pi pi-check' : 'pi pi-plus'" (onClick)="save()" />
+  </ng-template>
+</p-dialog>
+
+<!-- ══ Dialog Crear Ticket ══ -->
+<p-dialog [(visible)]="showCreateTicket" header="Crear ticket"
+  [modal]="true" [style]="{ width: '480px' }" [draggable]="false">
+  <div class="form-grid">
+    <div class="field"><label>Título *</label>
+      <input pInputText [(ngModel)]="newTicket.title" class="w-full" /></div>
+    <div class="field"><label>Descripción</label>
+      <textarea pTextarea [(ngModel)]="newTicket.description" rows="3" class="w-full"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Estado inicial</label>
+        <p-select [(ngModel)]="newTicket.status" [options]="statuses" styleClass="w-full" /></div>
+      <div class="field"><label>Prioridad</label>
+        <p-select [(ngModel)]="newTicket.priority" [options]="priorities" styleClass="w-full" /></div>
+    </div>
+    <!-- CAMBIO: select con miembros del grupo -->
+    <div class="field">
+      <label>Asignado a *</label>
+      <p-select
+        [(ngModel)]="newTicket.assignedTo"
+        [options]="memberOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecciona un miembro"
+        styleClass="w-full" />
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showCreateTicket = false" />
+    <p-button label="Crear ticket" icon="pi pi-plus" (onClick)="createTicket()" />
   </ng-template>
 </p-dialog>

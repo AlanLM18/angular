@@ -1,38 +1,156 @@
-<div class="page-wrapper">
-  <div class="page-header">
-    <div>
-      <h2 class="page-title">Dashboard</h2>
-      <p class="page-sub">Resumen general del sistema</p>
-    </div>
-    <p-tag value="Admin" severity="info" />
-  </div>
+<p-toast position="top-right" />
 
-  <div class="stats-row">
-    <div *ngFor="let s of stats" class="stat-card stat-{{s.color}}">
-      <div class="stat-icon"><i [class]="s.icon"></i></div>
-      <div class="stat-body">
-        <span class="stat-label">{{ s.label }}</span>
-        <span class="stat-value">{{ s.value }}</span>
+<div class="dash-root">
+
+  <!-- ── TOP BAR ───────────────────────────────────────────── -->
+  <div class="top-bar">
+    <div class="top-left">
+      <div class="dash-badge">DASHBOARD</div>
+      <h1 class="dash-title">Vista General</h1>
+    </div>
+    <div class="top-right">
+      <div class="group-selector">
+        <span class="selector-label">GRUPO ACTIVO</span>
+        <p-select
+          [(ngModel)]="selectedGroup"
+          [options]="groupOptions"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="onGroupChange($event.value)"
+          styleClass="group-select"
+          placeholder="Selecciona un grupo" />
       </div>
-      <span class="stat-badge">{{ s.change }}</span>
     </div>
   </div>
 
-  <div class="cards-row">
-    <p-card header="N. Projects" styleClass="info-card">
-      <p>Gestiona y monitorea todos los proyectos activos del sistema.</p>
-      <ng-template pTemplate="footer">
-        <p-button label="Ver proyectos" icon="pi pi-arrow-right" iconPos="right" size="small" />
-      </ng-template>
-    </p-card>
+  <!-- ── HERO STATS ─────────────────────────────────────────── -->
+  <div class="hero-stats">
+    <div class="hero-total">
+      <div class="hero-number">{{ totalTickets }}</div>
+      <div class="hero-label">TICKETS TOTALES</div>
+      <div class="hero-group">{{ selectedGroupName }}</div>
+    </div>
+    <div class="hero-divider"></div>
+    <div class="hero-quick">
+      <div *ngFor="let s of byStatus" class="quick-stat">
+        <div class="quick-dot" [style.background]="s.color"></div>
+        <div class="quick-info">
+          <span class="quick-num">{{ s.count }}</span>
+          <span class="quick-lbl">{{ s.label }}</span>
+        </div>
+        <div class="quick-bar">
+          <div class="quick-fill" [style.width.%]="s.pct" [style.background]="s.color"></div>
+        </div>
+      </div>
+      <div *ngIf="byStatus.length === 0" class="empty-stats">
+        <i class="pi pi-inbox"></i> Sin tickets en este grupo
+      </div>
+    </div>
+  </div>
 
-    <p-card header="Rutas activas" styleClass="info-card">
-      <p>Revisa el estado de todas las rutas configuradas en el sistema.</p>
-      <ng-template pTemplate="footer">
-        <p-button label="Ver rutas" icon="pi pi-arrow-right" iconPos="right" size="small" severity="secondary" />
-      </ng-template>
-    </p-card>
+  <!-- ── GRID CHARTS ────────────────────────────────────────── -->
+  <div class="charts-grid">
 
+    <!-- Por Estado -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">POR ESTADO</span>
+        <span class="chart-sub">{{ totalTickets }} total</span>
+      </div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 120 120" class="donut-svg">
+          <ng-container *ngFor="let s of byStatus; let i = index">
+            <circle
+              cx="60" cy="60" r="45"
+              fill="none"
+              [attr.stroke]="s.color"
+              stroke-width="14"
+              [attr.stroke-dasharray]="(s.pct * 2.827) + ' ' + (282.7 - s.pct * 2.827)"
+              [attr.stroke-dashoffset]="getDonutOffset(i, 'status')"
+              class="donut-seg" />
+          </ng-container>
+          <text x="60" y="55" text-anchor="middle" class="donut-num">{{ totalTickets }}</text>
+          <text x="60" y="70" text-anchor="middle" class="donut-sub">tickets</text>
+        </svg>
+        <div class="donut-legend">
+          <div *ngFor="let s of byStatus" class="legend-row">
+            <span class="legend-dot" [style.background]="s.color"></span>
+            <span class="legend-lbl">{{ s.label }}</span>
+            <span class="legend-num">{{ s.count }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Por Prioridad -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">POR PRIORIDAD</span>
+        <span class="chart-sub">distribución</span>
+      </div>
+      <div class="bars-list">
+        <div *ngFor="let p of byPriority" class="bar-row">
+          <span class="bar-label">{{ p.label }}</span>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width.%]="p.pct" [style.background]="p.color"></div>
+          </div>
+          <span class="bar-count">{{ p.count }}</span>
+        </div>
+        <div *ngIf="byPriority.length === 0" class="empty-stats">
+          <i class="pi pi-chart-bar"></i> Sin datos
+        </div>
+      </div>
+    </div>
+
+    <!-- Grupos -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">MIS GRUPOS</span>
+        <span class="chart-sub">{{ groups.length }} grupos</span>
+      </div>
+      <div class="groups-list">
+        <div *ngFor="let g of groups" class="group-row"
+          [class.active-group]="g.id === selectedGroup"
+          (click)="onGroupChange(g.id)">
+          <div class="group-avatar-sm">{{ g.nombre.charAt(0) }}</div>
+          <span class="group-name-sm">{{ g.nombre }}</span>
+          <span class="group-nivel" [class]="'nivel-' + g.nivel?.toLowerCase()">{{ g.nivel }}</span>
+          <i class="pi pi-chevron-right group-arrow"></i>
+        </div>
+      </div>
+    </div>
 
   </div>
+
+  <!-- ── TICKETS RECIENTES ──────────────────────────────────── -->
+  <div class="recent-card" *ngIf="recentTickets.length > 0">
+    <div class="chart-header">
+      <span class="chart-title">TICKETS RECIENTES</span>
+      <span class="chart-sub">últimos 5 en {{ selectedGroupName }}</span>
+    </div>
+    <div class="recent-table">
+      <div class="rt-head">
+        <span>TICKET</span>
+        <span>ESTADO</span>
+        <span>PRIORIDAD</span>
+        <span>FECHA</span>
+      </div>
+      <a *ngFor="let t of recentTickets" [routerLink]="['/home/ticket', t.id]" class="rt-row">
+        <span class="rt-title">#{{ t.id }} {{ t.title }}</span>
+        <span>
+          <p-tag [value]="t.status" [severity]="getStatusSeverity(t.status)" />
+        </span>
+        <span>
+          <p-tag [value]="t.priority" [severity]="getPrioritySeverity(t.priority)" />
+        </span>
+        <span class="rt-date">{{ t.created_at | date:'d MMM' }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-overlay">
+    <i class="pi pi-spin pi-spinner"></i>
+  </div>
+
 </div>

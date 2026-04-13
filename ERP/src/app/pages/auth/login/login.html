@@ -4,11 +4,11 @@
   <p-card styleClass="login-card">
     <ng-template pTemplate="header">
       <div class="login-header">
+        <div class="login-logo"><i class="pi pi-building"></i></div>
         <h2>Iniciar Sesión</h2>
         <p>Ingresa tus credenciales para continuar</p>
       </div>
     </ng-template>
-
 
     <div class="field">
       <label for="username">Usuario</label>
@@ -20,12 +20,9 @@
         [class.ng-invalid]="usernameInvalid"
         [class.ng-dirty]="usernameInvalid"
         class="w-full"
+        (keydown.enter)="login()"
       />
-      <p-message
-        *ngIf="usernameInvalid"
-        severity="error"
-        text="El usuario es requerido."
-      />
+      <p-message *ngIf="usernameInvalid" severity="error" text="El usuario es requerido." />
     </div>
 
     <div class="field">
@@ -40,12 +37,9 @@
         [class.ng-dirty]="passwordInvalid"
         styleClass="w-full"
         inputStyleClass="w-full"
+        (keydown.enter)="login()"
       />
-      <p-message
-        *ngIf="passwordInvalid"
-        severity="error"
-        text="La contraseña es requerida."
-      />
+      <p-message *ngIf="passwordInvalid" severity="error" text="La contraseña es requerida." />
     </div>
 
     <ng-template pTemplate="footer">

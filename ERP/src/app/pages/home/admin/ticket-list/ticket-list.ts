@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { InputTextModule } from 'primeng/inputtext';
@@ -10,7 +10,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { HasPermissionDirective } from '../../../../core/has-permission';
 import { PermissionsService } from '../../../../core/permissions';
-import { Ticket, MOCK_TICKETS, STATUSES, PRIORITIES, PRIORITY_LABELS, TicketStatus, TicketPriority } from '../../../../core/ticket.model';
+import { ApiService } from '../../../../core/api.service';
+import { STATUSES, PRIORITIES, PRIORITY_LABELS, TicketStatus, TicketPriority } from '../../../../core/ticket.model';
 
 @Component({
   selector: 'app-ticket-list',
@@ -24,55 +25,73 @@ import { Ticket, MOCK_TICKETS, STATUSES, PRIORITIES, PRIORITY_LABELS, TicketStat
   templateUrl: './ticket-list.html',
   styleUrls: ['./ticket-list.css'],
 })
-export class TicketListComponent {
-  tickets: Ticket[] = [...MOCK_TICKETS];
-  statuses = ['', ...STATUSES];
-  priorities = ['', ...PRIORITIES];
-  priorityLabels = PRIORITY_LABELS;
+export class TicketListComponent implements OnInit {
+  tickets: any[]     = [];
+  statuses           = ['', ...STATUSES];
+  priorities         = ['', ...PRIORITIES];
+  priorityLabels     = PRIORITY_LABELS;
+  groupId            = 0;
 
-  searchText  = '';
-  filterStatus: string = '';
-  filterPriority: string = '';
-  filterAssigned: string = '';
+  searchText      = '';
+  filterStatus    = '';
+  filterPriority  = '';
+  filterAssigned  = '';
   activeQuick: 'all' | 'mine' | 'unassigned' | 'high' = 'all';
-  sortField: keyof Ticket | '' = '';
-  sortAsc = true;
+  sortField       = '';
+  sortAsc         = true;
 
-  constructor(public permissionsService: PermissionsService) {}
+  constructor(
+    public permissionsService: PermissionsService,
+    private apiService: ApiService,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+    private messageService: MessageService,
+    @Inject(PLATFORM_ID) private platformId: Object,
+  ) {}
+
+  ngOnInit() {
+    this.groupId = Number(this.route.snapshot.queryParamMap.get('groupId') ?? 0);
+    if (isPlatformBrowser(this.platformId)) this.loadTickets();
+  }
+
+  loadTickets() {
+    if (!this.groupId) return;
+    this.apiService.getTicketsByGroup(this.groupId).subscribe({
+      next: (res: any) => {
+        this.tickets = res.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los tickets.' }),
+    });
+  }
 
   get currentUser() { return this.permissionsService.getUser(); }
 
-  get filtered(): Ticket[] {
+  get filtered(): any[] {
     let list = [...this.tickets];
-
-    // Filtros rápidos
-    if (this.activeQuick === 'mine')       list = list.filter(t => t.assignedTo === this.currentUser);
-    if (this.activeQuick === 'unassigned') list = list.filter(t => !t.assignedTo);
-    if (this.activeQuick === 'high')       list = list.filter(t => t.priority === '最高' || t.priority === '高');
-
-    // Filtros de columna
+    if (this.activeQuick === 'mine')       list = list.filter(t => t.assigned_to === this.currentUser);
+    if (this.activeQuick === 'unassigned') list = list.filter(t => !t.assigned_to);
+    if (this.activeQuick === 'high')       list = list.filter(t => t.priority === 'Crítica' || t.priority === 'Alta');
     if (this.searchText)     list = list.filter(t => t.title.toLowerCase().includes(this.searchText.toLowerCase()));
     if (this.filterStatus)   list = list.filter(t => t.status === this.filterStatus);
     if (this.filterPriority) list = list.filter(t => t.priority === this.filterPriority);
-    if (this.filterAssigned) list = list.filter(t => t.assignedTo?.toLowerCase().includes(this.filterAssigned.toLowerCase()));
-
-    // Ordenamiento
+    if (this.filterAssigned) list = list.filter(t => t.assigned_to?.toString().toLowerCase().includes(this.filterAssigned.toLowerCase()));
     if (this.sortField) {
       list.sort((a, b) => {
-        const va = String(a[this.sortField as keyof Ticket] ?? '');
-        const vb = String(b[this.sortField as keyof Ticket] ?? '');
+        const va = String(a[this.sortField] ?? '');
+        const vb = String(b[this.sortField] ?? '');
         return this.sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
       });
     }
     return list;
   }
 
-  sort(field: keyof Ticket) {
+  sort(field: string) {
     if (this.sortField === field) this.sortAsc = !this.sortAsc;
     else { this.sortField = field; this.sortAsc = true; }
   }
 
-  sortIcon(field: keyof Ticket) {
+  sortIcon(field: string) {
     if (this.sortField !== field) return 'pi pi-sort';
     return this.sortAsc ? 'pi pi-sort-up' : 'pi pi-sort-down';
   }
@@ -83,10 +102,14 @@ export class TicketListComponent {
     this.activeQuick = 'all'; this.sortField = '';
   }
 
-  getPrioritySeverity(p: TicketPriority): "success" | "info" | "warn" | "secondary" | "contrast" | "danger" {
-    if (p === '最高' || p === '高') return 'danger';
-    if (p === '中高') return 'warn';
-    if (p === '中')   return 'info';
+  getPriorityLabel(p: any): string {
+    return this.priorityLabels[p as TicketPriority] ?? p;
+  }
+
+  getPrioritySeverity(p: any): "danger" | "warn" | "info" | "secondary" {
+    if (p === 'Crítica' || p === 'Alta') return 'danger';
+    if (p === 'Media-Alta') return 'warn';
+    if (p === 'Media')      return 'info';
     return 'secondary';
   }
 

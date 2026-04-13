@@ -4,13 +4,18 @@
 
   <!-- Back + Header -->
   <div class="page-header">
-    <a routerLink="/home/tickets" class="back-btn">
-      <i class="pi pi-arrow-left"></i> Volver al tablero
+    <a routerLink="/home/groups" class="back-btn">
+      <i class="pi pi-arrow-left"></i> Volver
     </a>
     <div class="header-right">
       <p-tag [value]="ticket.status" [severity]="getStatusSeverity(ticket.status)" />
-      <p-button *ngIf="canEdit && !editing" icon="pi pi-pencil" label="Editar"
-        size="small" severity="secondary" (onClick)="startEdit()" />
+      <p-button
+        *ngIf="canEdit && !editing"
+        icon="pi pi-pencil"
+        label="Editar"
+        size="small"
+        severity="secondary"
+        (onClick)="startEdit()" />
     </div>
   </div>
 
@@ -56,7 +61,7 @@
         <h3 class="section-title"><i class="pi pi-comments"></i> Comentarios</h3>
         <div class="comments-list">
           <div *ngFor="let c of ticket.comments" class="comment">
-            <div class="comment-avatar">{{ c.author.charAt(0).toUpperCase() }}</div>
+            <div class="comment-avatar">{{ c.author ? c.author.charAt(0).toUpperCase() : '?' }}</div>
             <div class="comment-body">
               <div class="comment-meta">
                 <strong>{{ c.author }}</strong>
@@ -96,7 +101,7 @@
       </div>
     </div>
 
-    <!-- Sidebar info -->
+    <!-- Sidebar -->
     <div class="side-col">
       <div class="detail-card info-card">
         <h3 class="section-title">Detalles</h3>
@@ -108,26 +113,30 @@
               (ngModelChange)="changeStatus($event)"
               [options]="statuses" styleClass="w-full" />
           </div>
-          <p-tag *ngIf="!canChangeStatus" [value]="ticket.status" [severity]="getStatusSeverity(ticket.status)" />
+          <p-tag *ngIf="!canChangeStatus"
+            [value]="ticket.status"
+            [severity]="getStatusSeverity(ticket.status)" />
         </div>
 
         <div class="info-row">
           <span class="info-label">Prioridad</span>
           <p-tag [value]="ticket.priority" [severity]="getPrioritySeverity(ticket.priority)" />
-          <span class="priority-label">{{ priorityLabels[ticket.priority] }}</span>
+          <span class="priority-label">{{ getPriorityLabel(ticket.priority) }}</span>
         </div>
 
+        <!-- FIX: assigned-chip con *ngIf para evitar crash en .charAt() -->
         <div class="info-row">
           <span class="info-label">Asignado a</span>
-          <div class="assigned-chip">
-            {{ ticket.assignedTo.charAt(0).toUpperCase() || '?' }}
-            <span>{{ ticket.assignedTo || 'Sin asignar' }}</span>
+          <div class="assigned-chip" *ngIf="ticket.assignedTo">
+            <div class="chip-avatar">{{ ticket.assignedTo.charAt(0).toUpperCase() }}</div>
+            <span>{{ ticket.assignedTo }}</span>
           </div>
+          <span *ngIf="!ticket.assignedTo" class="unassigned">Sin asignar</span>
         </div>
 
         <div class="info-row">
           <span class="info-label">Creado por</span>
-          <span class="info-value">{{ ticket.createdBy }}</span>
+          <span class="info-value">{{ ticket.createdBy || '—' }}</span>
         </div>
 
         <div class="info-row">
@@ -141,6 +150,7 @@
             {{ ticket.dueDate ? (ticket.dueDate | date:'d MMM yyyy') : '—' }}
           </span>
         </div>
+
       </div>
     </div>
   </div>
@@ -150,6 +160,6 @@
   <div class="not-found">
     <i class="pi pi-inbox"></i>
     <p>Ticket no encontrado.</p>
-    <a routerLink="/home/tickets">Volver al tablero</a>
+    <a routerLink="/home/groups">Volver al tablero</a>
   </div>
 </ng-template>

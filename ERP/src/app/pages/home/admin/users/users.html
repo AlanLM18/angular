@@ -1,56 +1,168 @@
-<div class="page-wrapper">
-  <div class="page-header">
-    <div>
-      <h2 class="page-title">Users</h2>
-      <p class="page-sub">Gestión de usuarios del sistema</p>
-    </div>
-    <p-button label="Nuevo usuario" icon="pi pi-user-plus" size="small" />
-  </div>
+<p-toast position="top-right" />
+<p-confirmDialog />
 
-  <!-- Summary -->
-  <div class="summary-row">
-    <div class="sum-card">
-      <span class="sum-label">Total</span>
-      <span class="sum-value">{{ users.length }}</span>
-    </div>
-    <div class="sum-card green">
-      <span class="sum-label">Activos</span>
-      <span class="sum-value">{{ activeCount }}</span>
-    </div>
-    <div class="sum-card red">
-      <span class="sum-label">Inactivos</span>
-      <span class="sum-value">{{ inactiveCount }}</span>
-    </div>
-  </div>
+<div class="page-wrapper" [class.has-panel]="selectedUser">
 
-  <!-- Search -->
-  <div class="search-bar">
-    <i class="pi pi-search"></i>
-    <input pInputText [(ngModel)]="search" placeholder="Buscar usuario..." class="search-input" />
-  </div>
+  <!-- ── Lista de usuarios ─────────────────────────── -->
+  <div class="users-section">
 
-  <!-- Users list -->
-  <div class="users-list">
-    <div *ngFor="let u of filtered" class="user-row">
-      <div class="user-avatar">{{ u.name.charAt(0) }}</div>
-      <div class="user-info">
-        <span class="user-name">{{ u.name }}</span>
-        <span class="user-email">{{ u.email }}</span>
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">Usuarios</h2>
+        <p class="page-sub">Gestión de usuarios del sistema</p>
       </div>
-      <span class="user-group">{{ u.group }}</span>
-      <p-tag [value]="u.role" severity="info" styleClass="role-tag" />
-      <p-tag
-        [value]="u.status === 'active' ? 'Activo' : 'Inactivo'"
-        [severity]="u.status === 'active' ? 'success' : 'danger'" />
-      <div class="user-actions">
-        <button class="action-btn" pTooltip="Editar"><i class="pi pi-pencil"></i></button>
-        <button class="action-btn danger" pTooltip="Eliminar"><i class="pi pi-trash"></i></button>
+      <p-button *hasPermission="'user:add'"
+        label="Nuevo usuario" icon="pi pi-user-plus" size="small"
+        (onClick)="openCreate()" />
+    </div>
+
+    <div class="summary-row">
+      <div class="sum-card">
+        <span class="sum-label">Total</span>
+        <span class="sum-value">{{ users.length }}</span>
+      </div>
+      <div class="sum-card green">
+        <span class="sum-label">Activos</span>
+        <span class="sum-value">{{ activeCount }}</span>
+      </div>
+      <div class="sum-card red">
+        <span class="sum-label">Inactivos</span>
+        <span class="sum-value">{{ inactiveCount }}</span>
       </div>
     </div>
 
-    <div *ngIf="filtered.length === 0" class="empty-state">
+    <div class="search-bar">
       <i class="pi pi-search"></i>
-      <p>No se encontraron usuarios</p>
+      <input pInputText [(ngModel)]="search" placeholder="Buscar usuario..." class="search-input" />
+    </div>
+
+    <div class="users-list">
+      <div *ngFor="let u of filtered" class="user-row"
+        [class.selected]="selectedUser?.id === u.id"
+        (click)="openPerms(u)">
+        <div class="user-avatar">{{ u.name.charAt(0) }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ u.name }}</span>
+          <span class="user-email">@{{ u.username }} · {{ u.email }}</span>
+        </div>
+        <span class="user-group">Grupo {{ u.group_id }}</span>
+        <p-tag [value]="u.role" severity="info" styleClass="role-tag" />
+        <p-tag
+          [value]="u.status === 'active' ? 'Activo' : 'Inactivo'"
+          [severity]="u.status === 'active' ? 'success' : 'danger'" />
+        <span class="perm-count">
+          <i class="pi pi-key"></i> {{ u.perms.length }}
+        </span>
+        <div class="user-actions" (click)="$event.stopPropagation()">
+          <button *hasPermission="'user:edit'"
+            class="action-btn" pTooltip="Editar" tooltipPosition="top"
+            (click)="openEdit(u)">
+            <i class="pi pi-pencil"></i>
+          </button>
+          <button *hasPermission="'user:delete'"
+            class="action-btn danger" pTooltip="Eliminar" tooltipPosition="top"
+            (click)="confirmDelete(u)">
+            <i class="pi pi-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="filtered.length === 0" class="empty-state">
+        <i class="pi pi-search"></i>
+        <p>No se encontraron usuarios</p>
+      </div>
     </div>
   </div>
+
+  <!-- ── Panel de permisos ─────────────────────────── -->
+  <div *ngIf="selectedUser" class="perms-panel">
+
+    <div class="perms-header">
+      <div class="perms-user-info">
+        <div class="perms-avatar">{{ selectedUser.name.charAt(0) }}</div>
+        <div>
+          <span class="perms-name">{{ selectedUser.name }}</span>
+          <span class="perms-role">{{ selectedUser.role }}</span>
+        </div>
+      </div>
+      <button class="close-panel" (click)="closePerms()">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+
+    <!-- Buscador de permisos -->
+    <div class="perm-search-bar">
+      <i class="pi pi-search"></i>
+      <input [(ngModel)]="permSearch" placeholder="Buscar permiso..." />
+    </div>
+
+    <!-- Contador -->
+    <div class="perm-summary">
+      <span><strong>{{ selectedUser.perms.length }}</strong> permisos activos</span>
+    </div>
+
+    <!-- Grupos de permisos -->
+    <div class="perms-groups">
+      <div *ngFor="let g of filteredGroups()" class="perm-group">
+        <div class="perm-group-label">
+          <i [class]="g.icon"></i> {{ g.label }}
+        </div>
+        <div *ngFor="let p of g.perms" class="perm-row">
+          <span class="perm-name">{{ p }}</span>
+          <button class="perm-toggle" [class.active]="hasPerm(selectedUser, p)"
+            (click)="togglePerm(selectedUser, p)">
+            <i class="pi" [class.pi-check-circle]="hasPerm(selectedUser, p)"
+               [class.pi-circle]="!hasPerm(selectedUser, p)"></i>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="filteredGroups().length === 0" class="empty-perm-search">
+        <i class="pi pi-search"></i> Sin resultados para "{{ permSearch }}"
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<!-- ── Dialog crear / editar ─────────────────────── -->
+<p-dialog [(visible)]="showDialog"
+  [header]="isEditing ? 'Editar usuario' : 'Nuevo usuario'"
+  [modal]="true" [style]="{ width: '460px' }" [draggable]="false">
+  <div class="form-grid">
+    <div class="field">
+      <label>Nombre completo *</label>
+      <input pInputText [(ngModel)]="current.name" placeholder="Nombre" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Usuario *</label>
+      <input pInputText [(ngModel)]="current.username" placeholder="nombre_usuario" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Email *</label>
+      <input pInputText [(ngModel)]="current.email" placeholder="correo@erp.com" class="w-full" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Tipo de usuario</label>
+        <p-select [(ngModel)]="current.role" [options]="roles"
+          optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Estado</label>
+        <p-select [(ngModel)]="current.status" [options]="statuses"
+          optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Grupo *</label>
+      <p-select [(ngModel)]="current.group_id" [options]="groups"
+        optionLabel="label" optionValue="value" styleClass="w-full" />
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showDialog = false" />
+    <p-button [label]="isEditing ? 'Guardar cambios' : 'Crear usuario'"
+      [icon]="isEditing ? 'pi pi-check' : 'pi pi-user-plus'" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

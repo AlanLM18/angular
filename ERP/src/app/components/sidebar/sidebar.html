@@ -11,11 +11,8 @@
   </div>
 
   <div class="sidebar-scroll">
-
-    <!-- ADMIN -->
     <div class="nav-group">
-      <span class="group-label" *ngIf="!collapsed">ADMIN</span>
-      <ng-container *ngFor="let item of adminItems">
+      <ng-container *ngFor="let item of navItems">
         <a *ngIf="canShow(item.perm)"
           [routerLink]="item.route" routerLinkActive="active"
           class="nav-item"
@@ -25,35 +22,20 @@
         </a>
       </ng-container>
     </div>
-
-    <!-- PAGES -->
-    <div class="nav-group">
-      <span class="group-label" *ngIf="!collapsed">PAGES</span>
-      <ng-container *ngFor="let item of pageItems">
-        <a *ngIf="canShow(item.perm)"
-          [routerLink]="item.route" routerLinkActive="active"
-          class="nav-item"
-          [pTooltip]="collapsed ? item.label : ''" tooltipPosition="right">
-          <i [class]="item.icon"></i>
-          <span *ngIf="!collapsed">{{ item.label }}</span>
-        </a>
-      </ng-container>
-    </div>
-
   </div>
 
   <!-- Footer -->
   <div class="sidebar-footer">
     <a routerLink="/home/profile" class="user-info"
       [pTooltip]="collapsed ? 'Mi perfil' : ''" tooltipPosition="right">
-      <div class="user-avatar">{{ permissionsService.getUser().charAt(0).toUpperCase() || 'U' }}</div>
+      <div class="user-avatar">{{ permissionsService.getUser().charAt(0).toUpperCase() }}</div>
       <div class="user-details" *ngIf="!collapsed">
         <span class="user-name">{{ permissionsService.getUser() }}</span>
         <span class="user-role">Ver perfil →</span>
       </div>
     </a>
-    <button class="logout-btn"
-      [pTooltip]="'Cerrar sesión'"
+    <button class="logout-btn" (click)="logout()"
+      pTooltip="Cerrar sesión"
       [tooltipPosition]="collapsed ? 'right' : 'top'">
       <i class="pi pi-sign-out"></i>
     </button>

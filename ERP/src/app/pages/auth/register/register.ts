@@ -1,16 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl,
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
+  AbstractControl, FormBuilder, FormGroup,
+  ReactiveFormsModule, ValidationErrors, Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
@@ -19,8 +13,7 @@ import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { MessageService } from 'primeng/api';
-
-
+import { ApiService } from '../../../core/api.service';
 
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
   const value: string = control.value || '';
@@ -29,7 +22,7 @@ function strongPasswordValidator(control: AbstractControl): ValidationErrors | n
 }
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
-  const pass = group.get('password')?.value;
+  const pass    = group.get('password')?.value;
   const confirm = group.get('confirmPassword')?.value;
   return pass === confirm ? null : { passwordMismatch: true };
 }
@@ -53,16 +46,9 @@ function phoneValidator(control: AbstractControl): ValidationErrors | null {
   selector: 'app-register',
   standalone: true,
   imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    RouterLink,
-    InputTextModule,
-    PasswordModule,
-    ButtonModule,
-    MessageModule,
-    ToastModule,
-    CardModule,
-    DividerModule,
+    CommonModule, ReactiveFormsModule, RouterLink,
+    InputTextModule, PasswordModule, ButtonModule,
+    MessageModule, ToastModule, CardModule, DividerModule,
   ],
   providers: [MessageService],
   templateUrl: './register.html',
@@ -71,31 +57,31 @@ function phoneValidator(control: AbstractControl): ValidationErrors | null {
 export class RegisterComponent {
   form: FormGroup;
   submitted = false;
-  maxDate = new Date().toISOString().split('T')[0];
+  loading   = false;
+  maxDate   = new Date().toISOString().split('T')[0];
 
   constructor(
     private fb: FormBuilder,
     private messageService: MessageService,
-    private router: Router
+    private router: Router,
+    private apiService: ApiService,
   ) {
     this.form = this.fb.group(
       {
-        username: ['', [Validators.required, Validators.minLength(4)]],
-        email: ['', [Validators.required, Validators.email]],
-        fullName: ['', [Validators.required, Validators.minLength(3)]],
-        birthDate: ['', [Validators.required, adultsOnlyValidator]],
-        phone: ['', [Validators.required, phoneValidator]],
-        address: ['', [Validators.required, Validators.minLength(5)]],
-        password: ['', [Validators.required, strongPasswordValidator]],
+        username:        ['', [Validators.required, Validators.minLength(4)]],
+        email:           ['', [Validators.required, Validators.email]],
+        fullName:        ['', [Validators.required, Validators.minLength(3)]],
+        birthDate:       ['', [Validators.required, adultsOnlyValidator]],
+        phone:           ['', [Validators.required, phoneValidator]],
+        address:         ['', [Validators.required, Validators.minLength(5)]],
+        password:        ['', [Validators.required, strongPasswordValidator]],
         confirmPassword: ['', Validators.required],
       },
       { validators: passwordMatchValidator }
     );
   }
 
-  f(name: string) {
-    return this.form.get(name)!;
-  }
+  f(name: string) { return this.form.get(name)!; }
 
   isInvalid(name: string) {
     const ctrl = this.f(name);
@@ -105,13 +91,11 @@ export class RegisterComponent {
   getError(name: string): string {
     const ctrl = this.f(name);
     if (!ctrl.errors) return '';
-    if (ctrl.errors['required']) return 'Este campo es requerido.';
-    if (ctrl.errors['minlength'])
-      return `Mínimo ${ctrl.errors['minlength'].requiredLength} caracteres.`;
-    if (ctrl.errors['email']) return 'Ingresa un correo electrónico válido.';
-    if (ctrl.errors['weakPassword'])
-      return 'Mínimo 10 caracteres, una mayúscula, un número y un símbolo (!@#$%^&*).';
-    if (ctrl.errors['underage']) return 'Debes ser mayor de 18 años para registrarte.';
+    if (ctrl.errors['required'])     return 'Este campo es requerido.';
+    if (ctrl.errors['minlength'])    return `Mínimo ${ctrl.errors['minlength'].requiredLength} caracteres.`;
+    if (ctrl.errors['email'])        return 'Ingresa un correo electrónico válido.';
+    if (ctrl.errors['weakPassword']) return 'Mínimo 10 caracteres, una mayúscula, un número y un símbolo (!@#$%^&*).';
+    if (ctrl.errors['underage'])     return 'Debes ser mayor de 18 años para registrarte.';
     if (ctrl.errors['invalidPhone']) return 'Ingresa exactamente 10 dígitos numéricos.';
     return 'Campo inválido.';
   }
@@ -135,12 +119,33 @@ export class RegisterComponent {
       return;
     }
 
-    this.messageService.add({
-      severity: 'success',
-      summary: '¡Registro exitoso!',
-      detail: `Bienvenido, ${this.f('fullName').value}. Ya puedes iniciar sesión.`,
-    });
+    this.loading = true;
 
-    setTimeout(() => this.router.navigate(['/login']), 2000);
+    const body = {
+      username:  this.f('username').value,
+      password:  this.f('password').value,
+      name:      this.f('fullName').value,
+      email:     this.f('email').value,
+      birthDate: this.f('birthDate').value,
+      phone:     this.f('phone').value,
+      address:   this.f('address').value,
+    };
+
+    this.apiService.register(body).subscribe({
+      next: () => {
+        this.loading = false;
+        this.messageService.add({
+          severity: 'success',
+          summary: '¡Registro exitoso!',
+          detail: `Bienvenido, ${body.name}. Ya puedes iniciar sesión.`,
+        });
+        setTimeout(() => this.router.navigate(['/login']), 2000);
+      },
+      error: (err) => {
+        this.loading = false;
+        const msg = err.error?.data?.[0]?.error ?? 'Error al registrar. Intenta de nuevo.';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: msg });
+      },
+    });
   }
 }

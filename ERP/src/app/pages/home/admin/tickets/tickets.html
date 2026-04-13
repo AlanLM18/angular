@@ -44,14 +44,12 @@
       (dragover)="onDragOver($event)"
       (drop)="onDrop($event, status)">
 
-      <!-- Column header -->
       <div class="col-header" [style.border-color]="getStatusColor(status)">
         <span class="col-dot" [style.background]="getStatusColor(status)"></span>
         <span class="col-title">{{ status }}</span>
         <span class="col-count">{{ byStatus(status).length }}</span>
       </div>
 
-      <!-- Ticket cards -->
       <div class="col-cards">
         <div *ngFor="let t of byStatus(status)"
           class="ticket-card"
@@ -67,20 +65,19 @@
           <a [routerLink]="['/home/ticket', t.id]" class="tc-title">{{ t.title }}</a>
 
           <div class="tc-bottom">
-            <div class="tc-avatar" [title]="t.assignedTo">
-              {{ t.assignedTo ? t.assignedTo.charAt(0).toUpperCase() : '?' }}
+            <div class="tc-avatar" [title]="t.assigned_to?.name || 'Sin asignar'">
+              {{ t.assigned_to?.name ? t.assigned_to.name.charAt(0).toUpperCase() : '?' }}
             </div>
-            <span class="tc-date" *ngIf="t.dueDate">
-              <i class="pi pi-calendar"></i>
-              {{ t.dueDate | date:'d MMM' }}
+            <span class="tc-assigned" *ngIf="t.assigned_to?.name">
+              {{ t.assigned_to.name }}
             </span>
-            <span class="tc-comments" *ngIf="t.comments.length">
-              <i class="pi pi-comment"></i> {{ t.comments.length }}
+            <span class="tc-date" *ngIf="t.due_date">
+              <i class="pi pi-calendar"></i>
+              {{ t.due_date | date:'d MMM' }}
             </span>
           </div>
         </div>
 
-        <!-- Empty state -->
         <div *ngIf="byStatus(status).length === 0" class="col-empty">
           <i class="pi pi-inbox"></i>
           <span>Sin tickets</span>
@@ -97,7 +94,8 @@
   <div class="form-grid">
     <div class="field">
       <label>Título *</label>
-      <input pInputText [(ngModel)]="newTicket.title" placeholder="Título del ticket" class="w-full" />
+      <input pInputText [(ngModel)]="newTicket.title"
+        placeholder="Mínimo 3 caracteres" class="w-full" />
     </div>
     <div class="field">
       <label>Descripción</label>
@@ -117,14 +115,21 @@
       </div>
     </div>
     <div class="field">
-      <label>Asignado a</label>
-      <input pInputText [(ngModel)]="newTicket.assignedTo"
-        placeholder="Usuario (opcional)" class="w-full" />
+      <label>Asignado a *</label>
+      <p-select
+        [(ngModel)]="newTicket.assignedTo"
+        [options]="groupMembers"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecciona un miembro"
+        styleClass="w-full" />
     </div>
   </div>
 
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="showCreate = false" />
-    <p-button label="Crear ticket" icon="pi pi-plus" (onClick)="createTicket()" />
+    <p-button label="Cancelar" severity="secondary" [outlined]="true"
+      (onClick)="showCreate = false" />
+    <p-button label="Crear ticket" icon="pi pi-plus"
+      (onClick)="createTicket()" />
   </ng-template>
 </p-dialog>
