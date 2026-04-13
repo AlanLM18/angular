@@ -25,7 +25,6 @@ export class DashboardComponent implements OnInit {
   groupOptions: any[] = [];
   loading = false;
 
-  // Stats
   totalTickets  = 0;
   byStatus:    { label: string; count: number; color: string; pct: number }[] = [];
   byPriority:  { label: string; count: number; color: string; pct: number }[] = [];
@@ -62,7 +61,7 @@ export class DashboardComponent implements OnInit {
   }
 
   loadGroups() {
-    this.apiService.getGroups().subscribe({
+    this.apiService.getMyGroups().subscribe({  // ← CAMBIO
       next: (res: any) => {
         this.groups = res.data ?? [];
         this.groupOptions = this.groups.map(g => ({ label: g.nombre, value: g.id }));

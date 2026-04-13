@@ -23,7 +23,6 @@ export class ApiService {
     });
   }
 
-  // ── Sin Content-Type para DELETE ──────────────────────────────────────────
   private deleteHeaders(): HttpHeaders {
     const token = isPlatformBrowser(this.platformId)
       ? (localStorage.getItem('token') ?? '')
@@ -64,6 +63,12 @@ export class ApiService {
   }
 
   // ── GROUPS ────────────────────────────────────────────────────────────────
+
+  // Grupos a los que pertenece el usuario logueado
+  getMyGroups(): Observable<any> {
+    return this.http.get(`${API_URL}/groups/my`, { headers: this.headers() });
+  }
+
   getGroups(): Observable<any> {
     return this.http.get(`${API_URL}/groups`, { headers: this.headers() });
   }

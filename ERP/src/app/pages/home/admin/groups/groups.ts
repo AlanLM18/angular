@@ -80,7 +80,6 @@ export class GroupsComponent implements OnInit {
   showCreateTicket = false;
   dragging: Ticket | null = null;
 
-  // ── newTicket con assignedTo como número ──────────
   newTicket: {
     title: string;
     description: string;
@@ -116,7 +115,7 @@ export class GroupsComponent implements OnInit {
   // ── Grupos ────────────────────────────────────────
   loadGroups() {
     this.loading = true;
-    this.apiService.getGroups().subscribe({
+    this.apiService.getMyGroups().subscribe({  // ← CAMBIO
       next: (res: any) => {
         this.loading = false;
         const data = res.data ?? [];
@@ -365,8 +364,6 @@ export class GroupsComponent implements OnInit {
   }
 
   // ── Tickets ───────────────────────────────────────
-
-  // Opciones del select usando los miembros ya cargados en selectedGroup
   get memberOptions(): { label: string; value: number }[] {
     return (this.selectedGroup?.members ?? [])
       .filter(m => m.id > 0)
