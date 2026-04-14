@@ -23,8 +23,9 @@ const PERMISSION_GROUPS = [
   { label: 'Sistema',  icon: 'pi pi-shield',  perms: ['superadmin'] },
 ];
 
-// Permisos que aplican por grupo (contextuales)
-const GROUP_SCOPED_LABELS = ['Tickets'];
+const TICKET_PERMS = [
+  'ticket:view', 'ticket:edit', 'ticket:add', 'ticket:delete', 'ticket:edit_state'
+];
 
 export interface UserWithPerms {
   id:       number;
@@ -197,27 +198,22 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  // Devuelve solo los grupos de permisos visibles según contexto
+  isTicketPerm(code: string): boolean {
+    return TICKET_PERMS.includes(code);
+  }
+
   filteredPermGroups() {
-    // Con grupo seleccionado → solo permisos contextuales (Tickets)
-    const visible = this.selectedGroupId
-      ? this.permGroups.filter(g => GROUP_SCOPED_LABELS.includes(g.label))
-      : this.permGroups;
-
-    if (!this.permSearch.trim()) return visible;
-
+    if (!this.permSearch.trim()) return this.permGroups;
     const q = this.permSearch.toLowerCase();
-    return visible
+    return this.permGroups
       .map(g => ({ ...g, perms: g.perms.filter((p: string) => p.toLowerCase().includes(q)) }))
       .filter(g => g.perms.length > 0);
   }
 
-  // Verifica si el permiso está activo en el grupo seleccionado
   hasGroupPerm(code: string): boolean {
     return this.groupPerms.some(p => p.code === code);
   }
 
-  // Devuelve la descripción de un permiso
   getPermDescription(code: string): string {
     const found = this.groupPerms.find(p => p.code === code);
     const allPerms: Record<string, string> = {
@@ -242,6 +238,7 @@ export class UsersComponent implements OnInit {
 
   toggleGroupPerm(code: string) {
     if (!this.selectedUser || !this.selectedGroupId) return;
+    if (!this.isTicketPerm(code)) return;
 
     const has = this.hasGroupPerm(code);
 
@@ -252,11 +249,14 @@ export class UsersComponent implements OnInit {
       this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
     }
 
-    const perm_codes = this.groupPerms.map(p => p.code);
+    // Solo enviar los ticket perms activos para no pisar otros permisos del grupo
+    const ticketPermCodes = this.groupPerms
+      .filter(p => this.isTicketPerm(p.code))
+      .map(p => p.code);
 
     this.apiService.updateGroupPermissions(this.selectedGroupId, {
       user_id:    this.selectedUser.id,
-      perm_codes,
+      perm_codes: ticketPermCodes,
     }).subscribe({
       next: () => {
         this.messageService.add({

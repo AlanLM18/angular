@@ -115,7 +115,7 @@
     <!-- Nota informativa -->
     <div class="perm-scope-info" *ngIf="selectedGroupId && !loadingGroups">
       <i class="pi pi-info-circle"></i>
-      Los permisos de <strong>Tickets</strong> se configuran por grupo de forma independiente.
+      Solo los permisos de <strong>Tickets</strong> son configurables por grupo.
     </div>
 
     <!-- Buscador de permisos -->
@@ -132,21 +132,30 @@
       </span>
     </div>
 
-    <!-- Grupos de permisos (solo Tickets cuando hay grupo seleccionado) -->
+    <!-- Grupos de permisos -->
     <div class="perms-groups" *ngIf="selectedGroupId && !loadingPerms">
       <div *ngFor="let g of filteredPermGroups()" class="perm-group">
+
         <div class="perm-group-label">
           <i [class]="g.icon"></i> {{ g.label }}
+          <span *ngIf="g.label !== 'Tickets'" class="perm-group-badge">
+            <i class="pi pi-lock"></i> Global
+          </span>
         </div>
-        <div *ngFor="let p of g.perms" class="perm-row">
+
+        <div *ngFor="let p of g.perms" class="perm-row"
+          [class.perm-disabled]="!isTicketPerm(p)">
           <span class="perm-name">{{ getPermDescription(p) }}</span>
-          <button class="perm-toggle" [class.active]="hasGroupPerm(p)"
+          <button class="perm-toggle"
+            [class.active]="hasGroupPerm(p)"
+            [disabled]="!isTicketPerm(p)"
             (click)="toggleGroupPerm(p)">
             <i class="pi"
                [class.pi-check-circle]="hasGroupPerm(p)"
                [class.pi-circle]="!hasGroupPerm(p)"></i>
           </button>
         </div>
+
       </div>
 
       <div *ngIf="filteredPermGroups().length === 0" class="empty-perm-search">
