@@ -23,7 +23,6 @@ export class ApiService {
     });
   }
 
-  // ── Sin Content-Type para DELETE ──────────────────────────────────────────
   private deleteHeaders(): HttpHeaders {
     const token = isPlatformBrowser(this.platformId)
       ? (localStorage.getItem('token') ?? '')
@@ -72,8 +71,12 @@ export class ApiService {
     return this.http.get(`${API_URL}/groups/${groupId}/members`, { headers: this.headers() });
   }
 
+  // FIX: asegurar que los parámetros se convierten a number antes de armar la URL
   getGroupPermissions(groupId: number, userId: number): Observable<any> {
-    return this.http.get(`${API_URL}/groups/${groupId}/permissions/${userId}`, { headers: this.headers() });
+    return this.http.get(
+      `${API_URL}/groups/${Number(groupId)}/permissions/${Number(userId)}`,
+      { headers: this.headers() }
+    );
   }
 
   createGroup(body: any): Observable<any> {
@@ -97,15 +100,20 @@ export class ApiService {
   }
 
   getMyGroups(): Observable<any> {
-  return this.http.get(`${API_URL}/groups/my`, { headers: this.headers() });
-}
+    return this.http.get(`${API_URL}/groups/my`, { headers: this.headers() });
+  }
 
-getUserGroups(userId: number): Observable<any> {
-  return this.http.get(`${API_URL}/groups/user/${userId}`, { headers: this.headers() });
-}
+  getUserGroups(userId: number): Observable<any> {
+    return this.http.get(`${API_URL}/groups/user/${Number(userId)}`, { headers: this.headers() });
+  }
 
+  // FIX: asegurar que groupId es number en la URL
   updateGroupPermissions(groupId: number, body: any): Observable<any> {
-    return this.http.post(`${API_URL}/groups/${groupId}/permissions`, body, { headers: this.headers() });
+    return this.http.post(
+      `${API_URL}/groups/${Number(groupId)}/permissions`,
+      body,
+      { headers: this.headers() }
+    );
   }
 
   // ── TICKETS ───────────────────────────────────────────────────────────────
@@ -137,5 +145,3 @@ getUserGroups(userId: number): Observable<any> {
     return this.http.delete(`${API_URL}/tickets/${id}`, { headers: this.deleteHeaders() });
   }
 }
-
-

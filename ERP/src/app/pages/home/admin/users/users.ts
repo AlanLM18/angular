@@ -163,10 +163,12 @@ export class UsersComponent implements OnInit {
     this.apiService.getUserGroups(userId).subscribe({
       next: (res: any) => {
         this.loadingGroups = false;
-        this.userGroups    = res.data ?? [];
+        // FIX: el backend devuelve { id, nombre, my_role, ... } en cada item
+        this.userGroups = res.data ?? [];
         if (this.userGroups.length > 0) {
-          this.selectedGroupId = this.userGroups[0].id;
-          this.loadGroupPerms(userId, this.selectedGroupId!);
+          // FIX: asegurar que selectedGroupId sea number, no string
+          this.selectedGroupId = Number(this.userGroups[0].id);
+          this.loadGroupPerms(userId, this.selectedGroupId);
         }
         this.cdr.detectChanges();
       },
@@ -178,14 +180,16 @@ export class UsersComponent implements OnInit {
   }
 
   onGroupSelect(groupId: number) {
-    this.selectedGroupId = groupId;
+    // FIX: forzar conversión a number para evitar comparaciones string vs number
+    this.selectedGroupId = Number(groupId);
     this.groupPerms      = [];
-    this.loadGroupPerms(this.selectedUser!.id, groupId);
+    this.loadGroupPerms(this.selectedUser!.id, this.selectedGroupId);
   }
 
   loadGroupPerms(userId: number, groupId: number) {
     this.loadingPerms = true;
-    this.apiService.getGroupPermissions(groupId, userId).subscribe({
+    // FIX: asegurar que ambos parámetros son number
+    this.apiService.getGroupPermissions(Number(groupId), Number(userId)).subscribe({
       next: (res: any) => {
         this.loadingPerms = false;
         this.groupPerms   = res.data?.perms ?? [];
@@ -194,6 +198,7 @@ export class UsersComponent implements OnInit {
       error: () => {
         this.loadingPerms = false;
         this.groupPerms   = [];
+        this.cdr.detectChanges();
       },
     });
   }
@@ -242,21 +247,20 @@ export class UsersComponent implements OnInit {
 
     const has = this.hasGroupPerm(code);
 
-    // Actualizar localmente primero
+    // Actualizar localmente primero (optimistic update)
     if (has) {
       this.groupPerms = this.groupPerms.filter(p => p.code !== code);
     } else {
       this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
     }
 
-    // Solo enviar los ticket perms activos para no pisar otros permisos del grupo
-    const ticketPermCodes = this.groupPerms
-      .filter(p => this.isTicketPerm(p.code))
-      .map(p => p.code);
+    // FIX: enviar TODOS los permisos activos del grupo, no solo los tickets
+    // El backend hace DELETE + INSERT, si solo mandas tickets pierdes los demás permisos
+    const allPermCodes = this.groupPerms.map(p => p.code);
 
     this.apiService.updateGroupPermissions(this.selectedGroupId, {
       user_id:    this.selectedUser.id,
-      perm_codes: ticketPermCodes,
+      perm_codes: allPermCodes,
     }).subscribe({
       next: () => {
         this.messageService.add({
@@ -266,12 +270,13 @@ export class UsersComponent implements OnInit {
         });
       },
       error: () => {
-        // Revertir si falla
+        // Revertir cambio local si falla el API
         if (has) {
           this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
         } else {
           this.groupPerms = this.groupPerms.filter(p => p.code !== code);
         }
+        this.cdr.detectChanges();
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el permiso.' });
       },
     });
