@@ -142,6 +142,13 @@ export class ApiService {
   }
 
   deleteTicket(id: number): Observable<any> {
-    return this.http.delete(`${API_URL}/tickets/${id}`, { headers: this.deleteHeaders() });
+  const token = isPlatformBrowser(this.platformId)
+    ? (localStorage.getItem('token') ?? '')
+    : '';
+  return this.http.delete(`${API_URL}/tickets/${id}`, {
+    headers: new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+    }),
+  });
   }
 }
