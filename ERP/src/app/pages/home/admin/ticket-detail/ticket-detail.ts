@@ -81,12 +81,12 @@ export class TicketDetailComponent implements OnInit {
         this.groupId = raw.group_id ?? this.groupId;
         this.ticket = {
           ...raw,
-          createdBy:  raw.created_by?.name  ?? String(raw.created_by  ?? ''),
-          assignedTo: raw.assigned_to?.name ?? String(raw.assigned_to ?? ''),
-          assignedToId: raw.assigned_to?.id ?? null,
-          createdById:  raw.created_by?.id  ?? null,
-          createdAt:  new Date(raw.created_at),
-          dueDate:    raw.due_date ? new Date(raw.due_date) : null,
+          createdBy:    raw.created_by?.name  ?? String(raw.created_by  ?? ''),
+          assignedTo:   raw.assigned_to?.name ?? String(raw.assigned_to ?? ''),
+          assignedToId: raw.assigned_to?.id   ?? null,
+          createdById:  raw.created_by?.id    ?? null,
+          createdAt:    new Date(raw.created_at),
+          dueDate:      raw.due_date ? new Date(raw.due_date) : null,
           comments: (raw.ticket_comments ?? []).map((c: any) => ({
             id:     c.id,
             author: c.users?.name ?? 'Anónimo',
@@ -113,11 +113,7 @@ export class TicketDetailComponent implements OnInit {
   }
 
   goBack() {
-    if (this.groupId) {
-      this.router.navigate(['/home/groups'], { queryParams: { groupId: this.groupId } });
-    } else {
-      this.router.navigate(['/home/groups']);
-    }
+    this.router.navigate(['/home/groups']);
   }
 
   get currentUserId() { return Number(localStorage.getItem('userId') ?? 0); }
@@ -139,23 +135,20 @@ export class TicketDetailComponent implements OnInit {
            this.ticket?.assignedToId === this.currentUserId;
   }
 
-  get canComment() {
-    return this.permissionsService.has('ticket:view');
-  }
-
   // ── Editar ────────────────────────────────────────
   startEdit() {
     this.draft = {
-      title:       this.ticket.title,
-      description: this.ticket.description,
-      priority:    this.ticket.priority,
+      title:        this.ticket.title,
+      description:  this.ticket.description ?? '',
+      priority:     this.ticket.priority,
+      assignedTo:   this.ticket.assignedTo,
       assignedToId: this.ticket.assignedToId,
-      dueDate:     this.ticket.dueDate,
+      dueDate:      this.ticket.dueDate
+                      ? new Date(this.ticket.dueDate).toISOString().split('T')[0]
+                      : '',
     };
     this.editing = true;
   }
-
-  cancelEdit() { this.editing = false; }
 
   saveEdit() {
     if (!this.ticket) return;
@@ -163,21 +156,30 @@ export class TicketDetailComponent implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'Título inválido', detail: 'Mínimo 3 caracteres.' });
       return;
     }
-    this.apiService.updateTicket(this.ticket.id, {
-      title:       this.draft.title.trim(),
-      description: this.draft.description,
-      priority:    this.draft.priority,
-      assigned_to: this.draft.assignedToId,
-      due_date:    this.draft.dueDate
-                     ? new Date(this.draft.dueDate).toISOString().split('T')[0]
-                     : null,
-    }).subscribe({
+
+    // FIX: solo incluir campos con valor para evitar body vacío o campos null
+    const body: any = {
+      title:    this.draft.title.trim(),
+      priority: this.draft.priority,
+    };
+    if (this.draft.description?.trim()) {
+      body.description = this.draft.description.trim();
+    }
+    if (this.draft.assignedToId) {
+      body.assigned_to = Number(this.draft.assignedToId);
+    }
+    if (this.draft.dueDate) {
+      body.due_date = this.draft.dueDate;
+    }
+
+    this.apiService.updateTicket(this.ticket.id, body).subscribe({
       next: () => {
-        this.ticket.title       = this.draft.title.trim();
-        this.ticket.description = this.draft.description;
-        this.ticket.priority    = this.draft.priority;
-        this.ticket.assignedToId = this.draft.assignedToId;
-        this.ticket.dueDate     = this.draft.dueDate ? new Date(this.draft.dueDate) : null;
+        this.ticket.title       = body.title;
+        this.ticket.description = body.description ?? this.ticket.description;
+        this.ticket.priority    = body.priority;
+        if (body.due_date) {
+          this.ticket.dueDate = new Date(body.due_date);
+        }
         this.editing = false;
         this.cdr.detectChanges();
         this.messageService.add({ severity: 'success', summary: 'Guardado ✓', detail: 'Ticket actualizado.' });
@@ -199,8 +201,8 @@ export class TicketDetailComponent implements OnInit {
       accept: () => {
         this.apiService.deleteTicket(this.ticket.id).subscribe({
           next: () => {
-            this.messageService.add({ severity: 'warn', summary: 'Eliminado', detail: `Ticket "${this.ticket.title}" eliminado.` });
-            setTimeout(() => this.goBack(), 1000);
+            this.messageService.add({ severity: 'warn', summary: 'Eliminado', detail: `"${this.ticket.title}" eliminado.` });
+            setTimeout(() => this.goBack(), 1200);
           },
           error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar.' }),
         });
