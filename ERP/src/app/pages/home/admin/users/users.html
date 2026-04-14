@@ -74,54 +74,87 @@
     </div>
   </div>
 
-  <!-- ── Panel de permisos ─────────────────────────── -->
-  <div *ngIf="selectedUser" class="perms-panel">
+<!-- ── Panel de permisos ─────────────────────────── -->
+<div *ngIf="selectedUser" class="perms-panel">
 
-    <div class="perms-header">
-      <div class="perms-user-info">
-        <div class="perms-avatar">{{ selectedUser.name.charAt(0) }}</div>
-        <div>
-          <span class="perms-name">{{ selectedUser.name }}</span>
-          <span class="perms-role">{{ selectedUser.role }}</span>
-        </div>
+  <div class="perms-header">
+    <div class="perms-user-info">
+      <div class="perms-avatar">{{ selectedUser.name.charAt(0) }}</div>
+      <div>
+        <span class="perms-name">{{ selectedUser.name }}</span>
+        <span class="perms-role">{{ selectedUser.role }}</span>
       </div>
-      <button class="close-panel" (click)="closePerms()">
-        <i class="pi pi-times"></i>
-      </button>
+    </div>
+    <button class="close-panel" (click)="closePerms()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <!-- Selector de grupo -->
+  <div class="field" style="padding: 0 1rem; margin-bottom: 0.5rem;">
+    <label style="font-size: 0.75rem; color: var(--text-secondary); display:block; margin-bottom: 0.4rem;">
+      <i class="pi pi-sitemap"></i> Grupo
+    </label>
+    <div *ngIf="loadingGroups" style="font-size:0.8rem; color: var(--text-secondary);">
+      Cargando grupos...
+    </div>
+    <div *ngIf="!loadingGroups && userGroups.length === 0"
+      style="font-size:0.8rem; color: var(--text-secondary); padding: 0.5rem 0;">
+      Este usuario no pertenece a ningún grupo.
+    </div>
+    <p-select
+      *ngIf="!loadingGroups && userGroups.length > 0"
+      [(ngModel)]="selectedGroupId"
+      [options]="userGroups"
+      optionLabel="nombre"
+      optionValue="id"
+      styleClass="w-full"
+      (onChange)="onGroupSelect($event.value)" />
+  </div>
+
+  <!-- Buscador de permisos -->
+  <div class="perm-search-bar" *ngIf="selectedGroupId">
+    <i class="pi pi-search"></i>
+    <input [(ngModel)]="permSearch" placeholder="Buscar permiso..." />
+  </div>
+
+  <!-- Contador -->
+  <div class="perm-summary" *ngIf="selectedGroupId">
+    <span *ngIf="loadingPerms">Cargando permisos...</span>
+    <span *ngIf="!loadingPerms">
+      <strong>{{ groupPerms.length }}</strong> permisos activos en este grupo
+    </span>
+  </div>
+
+  <!-- Grupos de permisos -->
+  <div class="perms-groups" *ngIf="selectedGroupId && !loadingPerms">
+    <div *ngFor="let g of filteredPermGroups()" class="perm-group">
+      <div class="perm-group-label">
+        <i [class]="g.icon"></i> {{ g.label }}
+      </div>
+      <div *ngFor="let p of g.perms" class="perm-row">
+        <span class="perm-name">{{ getPermDescription(p) }}</span>
+        <button class="perm-toggle" [class.active]="hasGroupPerm(p)"
+          (click)="toggleGroupPerm(p)">
+          <i class="pi"
+             [class.pi-check-circle]="hasGroupPerm(p)"
+             [class.pi-circle]="!hasGroupPerm(p)"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Buscador de permisos -->
-    <div class="perm-search-bar">
-      <i class="pi pi-search"></i>
-      <input [(ngModel)]="permSearch" placeholder="Buscar permiso..." />
-    </div>
-
-    <!-- Contador -->
-    <div class="perm-summary">
-      <span><strong>{{ selectedUser.perms.length }}</strong> permisos activos</span>
-    </div>
-
-    <!-- Grupos de permisos -->
-    <div class="perms-groups">
-      <div *ngFor="let g of filteredGroups()" class="perm-group">
-        <div class="perm-group-label">
-          <i [class]="g.icon"></i> {{ g.label }}
-        </div>
-        <div *ngFor="let p of g.perms" class="perm-row">
-          <span class="perm-name">{{ p }}</span>
-          <button class="perm-toggle" [class.active]="hasPerm(selectedUser, p)"
-            (click)="togglePerm(selectedUser, p)">
-            <i class="pi" [class.pi-check-circle]="hasPerm(selectedUser, p)"
-               [class.pi-circle]="!hasPerm(selectedUser, p)"></i>
-          </button>
-        </div>
-      </div>
-
-      <div *ngIf="filteredGroups().length === 0" class="empty-perm-search">
-        <i class="pi pi-search"></i> Sin resultados para "{{ permSearch }}"
-      </div>
+    <div *ngIf="filteredPermGroups().length === 0" class="empty-perm-search">
+      <i class="pi pi-search"></i> Sin resultados para "{{ permSearch }}"
     </div>
   </div>
+
+  <!-- Sin grupo seleccionado -->
+  <div *ngIf="!selectedGroupId && !loadingGroups && userGroups.length > 0"
+    class="empty-perm-search">
+    <i class="pi pi-info-circle"></i> Selecciona un grupo para ver sus permisos.
+  </div>
+
+</div>
 
 </div>
 

@@ -24,14 +24,14 @@ const PERMISSION_GROUPS = [
 ];
 
 export interface UserWithPerms {
-  id: number;
+  id:       number;
   username: string;
-  name: string;
-  email: string;
-  role: string;
+  name:     string;
+  email:    string;
+  role:     string;
   group_id: number;
-  status: 'active' | 'inactive';
-  perms: string[];
+  status:   'active' | 'inactive';
+  perms:    string[];
 }
 
 @Component({
@@ -55,12 +55,19 @@ export class UsersComponent implements OnInit {
   current: UserWithPerms = this.emptyUser();
 
   selectedUser: UserWithPerms | null = null;
-  permSearch = '';
-  permGroups = PERMISSION_GROUPS;
+  permSearch   = '';
+  permGroups   = PERMISSION_GROUPS;
+
+  // ── Grupos y permisos por grupo ───────────────────
+  userGroups:      any[]          = [];
+  selectedGroupId: number | null  = null;
+  groupPerms:      { code: string; description: string }[] = [];
+  loadingGroups    = false;
+  loadingPerms     = false;
 
   users: UserWithPerms[] = [];
 
-  roles  = [
+  roles = [
     { label: 'Super Admin', value: 'Super Admin' },
     { label: 'Admin',       value: 'Admin'       },
     { label: 'Usuario',     value: 'Usuario'     },
@@ -86,9 +93,7 @@ export class UsersComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.loadUsers();
-    }
+    if (isPlatformBrowser(this.platformId)) this.loadUsers();
   }
 
   loadUsers() {
@@ -97,18 +102,15 @@ export class UsersComponent implements OnInit {
       next: (res: any) => {
         this.loading = false;
         const usersData = res.data ?? [];
-        // Inicializar con perms vacíos
         this.users = usersData.map((u: any) => ({ ...u, perms: [] }));
         this.cdr.detectChanges();
 
-        // Cargar permisos de cada usuario y reasignar el arreglo completo
         let loaded = 0;
         usersData.forEach((u: any, i: number) => {
           this.apiService.getUser(u.id).subscribe({
             next: (r: any) => {
               this.users[i] = { ...this.users[i], perms: r.data?.perms ?? [] };
               loaded++;
-              // Reasignar cuando todos cargaron para que Angular detecte el cambio
               if (loaded === usersData.length) {
                 this.users = [...this.users];
                 this.cdr.detectChanges();
@@ -117,9 +119,8 @@ export class UsersComponent implements OnInit {
           });
         });
       },
-      error: (err) => {
+      error: () => {
         this.loading = false;
-        console.log('Error getUsers:', err);
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los usuarios.' });
       },
     });
@@ -127,8 +128,8 @@ export class UsersComponent implements OnInit {
 
   get filtered() {
     return this.users.filter(u =>
-      u.name?.toLowerCase().includes(this.search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(this.search.toLowerCase()) ||
+      u.name?.toLowerCase().includes(this.search.toLowerCase())     ||
+      u.email?.toLowerCase().includes(this.search.toLowerCase())    ||
       u.username?.toLowerCase().includes(this.search.toLowerCase())
     );
   }
@@ -137,35 +138,133 @@ export class UsersComponent implements OnInit {
   get inactiveCount() { return this.users.filter(u => u.status === 'inactive').length; }
 
   // ── Panel de permisos ─────────────────────────────
-  openPerms(u: UserWithPerms) { this.selectedUser = u; this.permSearch = ''; }
-  closePerms() { this.selectedUser = null; }
+  openPerms(u: UserWithPerms) {
+    this.selectedUser    = u;
+    this.permSearch      = '';
+    this.userGroups      = [];
+    this.selectedGroupId = null;
+    this.groupPerms      = [];
+    this.loadUserGroups(u.id);
+  }
 
-  filteredGroups() {
+  closePerms() {
+    this.selectedUser    = null;
+    this.userGroups      = [];
+    this.selectedGroupId = null;
+    this.groupPerms      = [];
+  }
+
+  loadUserGroups(userId: number) {
+    this.loadingGroups = true;
+    this.apiService.getUserGroups(userId).subscribe({
+      next: (res: any) => {
+        this.loadingGroups = false;
+        this.userGroups    = res.data ?? [];
+        if (this.userGroups.length > 0) {
+          this.selectedGroupId = this.userGroups[0].id;
+          this.loadGroupPerms(userId, this.selectedGroupId!);
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingGroups = false;
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los grupos.' });
+      },
+    });
+  }
+
+  onGroupSelect(groupId: number) {
+    this.selectedGroupId = groupId;
+    this.groupPerms      = [];
+    this.loadGroupPerms(this.selectedUser!.id, groupId);
+  }
+
+  loadGroupPerms(userId: number, groupId: number) {
+    this.loadingPerms = true;
+    this.apiService.getGroupPermissions(groupId, userId).subscribe({
+      next: (res: any) => {
+        this.loadingPerms = false;
+        this.groupPerms   = res.data?.perms ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingPerms = false;
+        this.groupPerms   = [];
+      },
+    });
+  }
+
+  filteredPermGroups() {
     if (!this.permSearch.trim()) return this.permGroups;
     const q = this.permSearch.toLowerCase();
     return this.permGroups
-      .map(g => ({ ...g, perms: g.perms.filter(p => p.toLowerCase().includes(q)) }))
+      .map(g => ({ ...g, perms: g.perms.filter((p: string) => p.toLowerCase().includes(q)) }))
       .filter(g => g.perms.length > 0);
   }
 
-  hasPerm(u: UserWithPerms, p: string): boolean { return u.perms?.includes(p) ?? false; }
+  // Verifica si el permiso está activo en el grupo seleccionado
+  hasGroupPerm(code: string): boolean {
+    return this.groupPerms.some(p => p.code === code);
+  }
 
-  togglePerm(u: UserWithPerms, p: string) {
-    const has  = u.perms.includes(p);
-    u.perms    = has ? u.perms.filter(x => x !== p) : [...u.perms, p];
+  // Devuelve la descripción de un permiso
+  getPermDescription(code: string): string {
+    const found = this.groupPerms.find(p => p.code === code);
+    // Buscar en todos los perms disponibles
+    const allPerms: Record<string, string> = {
+      'group:view':        'Ver grupos',
+      'group:edit':        'Editar grupos',
+      'group:add':         'Crear grupos',
+      'group:delete':      'Eliminar grupos',
+      'ticket:view':       'Ver tickets',
+      'ticket:edit':       'Editar tickets',
+      'ticket:add':        'Crear tickets',
+      'ticket:delete':     'Eliminar tickets',
+      'ticket:edit_state': 'Cambiar estado de tickets',
+      'user:view':         'Ver usuario',
+      'users:view':        'Ver lista de usuarios',
+      'user:edit':         'Editar usuarios',
+      'user:add':          'Crear usuarios',
+      'user:delete':       'Eliminar usuarios',
+      'superadmin':        'Super administrador',
+    };
+    return found?.description ?? allPerms[code] ?? code;
+  }
 
-    const idx = this.users.findIndex(x => x.id === u.id);
-    if (idx !== -1) this.users[idx] = { ...u };
-    this.selectedUser = { ...u };
+  toggleGroupPerm(code: string) {
+    if (!this.selectedUser || !this.selectedGroupId) return;
 
-    // Guardar en BD
-    this.apiService.updateUser(u.id, { perm_codes: u.perms }).subscribe({
+    const has = this.hasGroupPerm(code);
+
+    // Actualizar localmente primero
+    if (has) {
+      this.groupPerms = this.groupPerms.filter(p => p.code !== code);
+    } else {
+      this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
+    }
+
+    const perm_codes = this.groupPerms.map(p => p.code);
+
+    this.apiService.updateGroupPermissions(this.selectedGroupId, {
+      user_id:    this.selectedUser.id,
+      perm_codes,
+    }).subscribe({
       next: () => {
-        if (u.username === this.permissionsService.getUser()) {
-          this.permissionsService.updatePermissions(u.username, u.perms);
-        }
+        this.messageService.add({
+          severity: 'success',
+          summary:  'Permiso actualizado',
+          detail:   `${this.getPermDescription(code)} ${has ? 'removido' : 'agregado'}.`,
+        });
       },
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el permiso.' }),
+      error: () => {
+        // Revertir si falla
+        if (has) {
+          this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
+        } else {
+          this.groupPerms = this.groupPerms.filter(p => p.code !== code);
+        }
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el permiso.' });
+      },
     });
   }
 
@@ -185,28 +284,32 @@ export class UsersComponent implements OnInit {
 
     if (this.isEditing) {
       this.apiService.updateUser(this.current.id, {
-        name: this.current.name, email: this.current.email,
-        role: this.current.role, group_id: this.current.group_id,
-        status: this.current.status,
+        name:     this.current.name,
+        email:    this.current.email,
+        role:     this.current.role,
+        group_id: this.current.group_id,
+        status:   this.current.status,
       }).subscribe({
         next: () => {
-          this.messageService.add({ severity: 'success', summary: 'Agree ✓', detail: `"${this.current.name}" actualizado.` });
-          this.loadUsers();
-          this.showDialog = false;
+          this.messageService.add({ severity: 'success', summary: 'Guardado ✓', detail: `"${this.current.name}" actualizado.` });
+          this.loadUsers(); this.showDialog = false;
         },
         error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar.' }),
       });
     } else {
       this.apiService.addUser({
-        username: this.current.username, password: 'Temporal@123',
-        name: this.current.name, email: this.current.email,
-        role: this.current.role, group_id: this.current.group_id,
-        status: this.current.status, perm_codes: this.current.perms,
+        username:   this.current.username,
+        password:   'Temporal@123',
+        name:       this.current.name,
+        email:      this.current.email,
+        role:       this.current.role,
+        group_id:   this.current.group_id,
+        status:     this.current.status,
+        perm_codes: this.current.perms,
       }).subscribe({
         next: () => {
-          this.messageService.add({ severity: 'success', summary: 'Success ✓', detail: `"${this.current.name}" creado.` });
-          this.loadUsers();
-          this.showDialog = false;
+          this.messageService.add({ severity: 'success', summary: 'Creado ✓', detail: `"${this.current.name}" creado.` });
+          this.loadUsers(); this.showDialog = false;
         },
         error: (err) => {
           const msg = err.error?.data?.[0]?.error ?? 'No se pudo crear el usuario.';
@@ -226,7 +329,7 @@ export class UsersComponent implements OnInit {
         this.apiService.deleteUser(u.id).subscribe({
           next: () => {
             if (this.selectedUser?.id === u.id) this.selectedUser = null;
-            this.messageService.add({ severity: 'error', summary: 'X — Eliminado', detail: `"${u.name}" eliminado.` });
+            this.messageService.add({ severity: 'warn', summary: 'Eliminado', detail: `"${u.name}" eliminado.` });
             this.loadUsers();
           },
           error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar.' }),

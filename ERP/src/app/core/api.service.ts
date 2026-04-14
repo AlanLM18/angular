@@ -100,6 +100,10 @@ export class ApiService {
   return this.http.get(`${API_URL}/groups/my`, { headers: this.headers() });
 }
 
+getUserGroups(userId: number): Observable<any> {
+  return this.http.get(`${API_URL}/groups/user/${userId}`, { headers: this.headers() });
+}
+
   updateGroupPermissions(groupId: number, body: any): Observable<any> {
     return this.http.post(`${API_URL}/groups/${groupId}/permissions`, body, { headers: this.headers() });
   }
