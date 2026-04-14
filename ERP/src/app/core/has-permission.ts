@@ -1,4 +1,3 @@
-
 import {
   Directive,
   Input,
@@ -6,6 +5,7 @@ import {
   TemplateRef,
   ViewContainerRef,
   inject,
+  effect,
 } from '@angular/core';
 import { Permission, PermissionsService } from './permissions';
 
@@ -18,13 +18,18 @@ type PermissionMode = 'all' | 'any';
 export class HasPermissionDirective implements OnInit {
 
   @Input('hasPermission') required: Permission | Permission[] = [];
-
-
   @Input('hasPermissionMode') mode: PermissionMode = 'all';
 
-  private templateRef    = inject(TemplateRef<unknown>);
-  private viewContainer  = inject(ViewContainerRef);
-  private permService    = inject(PermissionsService);
+  private templateRef   = inject(TemplateRef<unknown>);
+  private viewContainer = inject(ViewContainerRef);
+  private permService   = inject(PermissionsService);
+
+  constructor() {
+    effect(() => {
+      this.permService.getAllActive();
+      this.updateView();
+    });
+  }
 
   ngOnInit(): void {
     this.updateView();
@@ -47,5 +52,3 @@ export class HasPermissionDirective implements OnInit {
     }
   }
 }
-
-

@@ -6,6 +6,15 @@ export type Permission = string;
 export class PermissionsService {
   private activePermissions = signal<Permission[]>([]);
   private activeUser        = signal<string>('');
+  private groupPermissions  = signal<Permission[]>([]);
+
+  setGroupPermissions(perms: Permission[]): void {
+    this.groupPermissions.set([...perms]);
+  }
+
+  clearGroupPermissions(): void {
+    this.groupPermissions.set([]);
+  }
 
   setUserPermissions(username: string, perms: Permission[] = []): void {
     this.activeUser.set(username);
@@ -22,6 +31,7 @@ export class PermissionsService {
   clear(): void {
     this.activeUser.set('');
     this.activePermissions.set([]);
+    this.groupPermissions.set([]);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
@@ -29,15 +39,25 @@ export class PermissionsService {
   }
 
   has(permission: Permission): boolean {
+    if (this.groupPermissions().length > 0) {
+      return this.groupPermissions().includes(permission);
+    }
     return this.activePermissions().includes(permission);
   }
 
   hasAll(permissions: Permission[]): boolean {
-    return permissions.every(p => this.activePermissions().includes(p));
+    return permissions.every(p => this.has(p));
   }
 
   hasAny(permissions: Permission[]): boolean {
-    return permissions.some(p => this.activePermissions().includes(p));
+    return permissions.some(p => this.has(p));
+  }
+
+  getAllActive(): Permission[] {
+    if (this.groupPermissions().length > 0) {
+      return this.groupPermissions();
+    }
+    return this.activePermissions();
   }
 
   getAll(): Permission[] {

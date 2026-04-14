@@ -172,6 +172,22 @@ export class GroupsComponent implements OnInit {
     this.editingConfig = false;
     this.view          = 'dashboard';
     this.loadGroupTickets(g.id);
+    this.loadCurrentUserGroupPerms(g.id);
+  }
+
+  loadCurrentUserGroupPerms(groupId: number) {
+    const userId = Number(localStorage.getItem('userId') ?? 0);
+    if (!userId) return;
+
+    this.apiService.getGroupPermissions(groupId, userId).subscribe({
+      next: (res: any) => {
+        const codes = (res.data?.perms ?? []).map((p: any) => p.code) as string[];
+        this.permissionsService.setGroupPermissions(codes);
+      },
+      error: () => {
+        this.permissionsService.clearGroupPermissions();
+      },
+    });
   }
 
   loadGroupTickets(groupId: number) {
@@ -207,6 +223,7 @@ export class GroupsComponent implements OnInit {
     this.view          = 'list';
     this.selectedGroup = null;
     this.groupTickets  = [];
+    this.permissionsService.clearGroupPermissions();
     this.loadGroups();
   }
 
