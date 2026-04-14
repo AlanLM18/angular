@@ -1,165 +1,208 @@
-<p-toast position="top-right" />
+<p-toast />
+<p-confirmDialog />
 
-<div class="page-wrapper" *ngIf="ticket; else notFound">
+<div class="ticket-detail-container">
 
-  <!-- Back + Header -->
-  <div class="page-header">
-    <a routerLink="/home/groups" class="back-btn">
-      <i class="pi pi-arrow-left"></i> Volver
-    </a>
-    <div class="header-right">
-      <p-tag [value]="ticket.status" [severity]="getStatusSeverity(ticket.status)" />
-      <p-button
-        *ngIf="canEdit && !editing"
-        icon="pi pi-pencil"
-        label="Editar"
-        size="small"
-        severity="secondary"
-        (onClick)="startEdit()" />
-    </div>
+  <!-- Loading -->
+  <div *ngIf="!ticket" class="loading-state">
+    <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+    <p>Cargando ticket...</p>
   </div>
 
-  <div class="detail-layout">
+  <ng-container *ngIf="ticket">
 
-    <!-- Main column -->
-    <div class="main-col">
-
-      <!-- Title & description -->
-      <div class="detail-card">
-        <div *ngIf="!editing">
-          <h2 class="ticket-title">#{{ ticket.id }} — {{ ticket.title }}</h2>
-          <p class="ticket-desc">{{ ticket.description || 'Sin descripción.' }}</p>
-        </div>
-        <div *ngIf="editing" class="form-grid">
-          <div class="field">
-            <label>Título *</label>
-            <input pInputText [(ngModel)]="draft.title" class="w-full" />
-          </div>
-          <div class="field">
-            <label>Descripción</label>
-            <textarea pTextarea [(ngModel)]="draft.description" rows="4" class="w-full"></textarea>
-          </div>
-          <div class="field">
-            <label>Asignado a</label>
-            <input pInputText [(ngModel)]="draft.assignedTo" class="w-full" />
-          </div>
-          <div class="field">
-            <label>Prioridad</label>
-            <select [(ngModel)]="draft.priority" class="native-select w-full">
-              <option *ngFor="let p of priorities" [value]="p">{{ priorityLabels[p] }}</option>
-            </select>
-          </div>
-          <div class="edit-actions">
-            <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="editing = false" />
-            <p-button label="Guardar" icon="pi pi-check" (onClick)="saveEdit()" />
-          </div>
-        </div>
+    <!-- Header -->
+    <div class="detail-header">
+      <div class="header-left">
+        <button pButton icon="pi pi-arrow-left" class="p-button-text p-button-secondary"
+                (click)="goBack()" pTooltip="Volver a grupos"></button>
+        <div class="ticket-id-badge">#{{ ticket.id }}</div>
       </div>
 
-      <!-- Comments -->
-      <div class="detail-card">
-        <h3 class="section-title"><i class="pi pi-comments"></i> Comentarios</h3>
-        <div class="comments-list">
-          <div *ngFor="let c of ticket.comments" class="comment">
-            <div class="comment-avatar">{{ c.author ? c.author.charAt(0).toUpperCase() : '?' }}</div>
-            <div class="comment-body">
-              <div class="comment-meta">
-                <strong>{{ c.author }}</strong>
-                <span>{{ c.date | date:'d MMM yyyy, HH:mm' }}</span>
+      <div class="header-actions">
+        <!-- Botón editar -->
+        <button *ngIf="canEdit && !editing"
+                pButton icon="pi pi-pencil" label="Editar"
+                class="p-button-outlined p-button-sm"
+                (click)="startEdit()"
+                pTooltip="Editar ticket"></button>
+
+        <!-- Botones guardar/cancelar edición -->
+        <ng-container *ngIf="editing">
+          <button pButton icon="pi pi-check" label="Guardar"
+                  class="p-button-success p-button-sm"
+                  (click)="saveEdit()"></button>
+          <button pButton icon="pi pi-times" label="Cancelar"
+                  class="p-button-text p-button-secondary p-button-sm"
+                  (click)="cancelEdit()"></button>
+        </ng-container>
+
+        <!-- Botón eliminar -->
+        <button *ngIf="canDelete"
+                pButton icon="pi pi-trash" label="Eliminar"
+                class="p-button-outlined p-button-danger p-button-sm"
+                (click)="deleteTicket()"
+                pTooltip="Eliminar ticket"></button>
+      </div>
+    </div>
+
+    <!-- Título -->
+    <div class="detail-title-section">
+      <h1 *ngIf="!editing" class="ticket-title">{{ ticket.title }}</h1>
+      <input *ngIf="editing" pInputText [(ngModel)]="draft.title"
+             class="w-full title-input" placeholder="Título del ticket" />
+    </div>
+
+    <!-- Tags de estado y prioridad -->
+    <div class="detail-tags" *ngIf="!editing">
+      <p-tag [severity]="getStatusSeverity(ticket.status)" [value]="ticket.status" />
+      <p-tag [severity]="getPrioritySeverity(ticket.priority)"
+             [value]="getPriorityLabel(ticket.priority)" />
+    </div>
+
+    <!-- Grid principal -->
+    <div class="detail-grid">
+
+      <!-- Columna izquierda: descripción + comentarios -->
+      <div class="detail-main">
+
+        <!-- Descripción -->
+        <div class="detail-card">
+          <h3 class="card-section-title">
+            <i class="pi pi-align-left"></i> Descripción
+          </h3>
+          <p *ngIf="!editing && ticket.description" class="description-text">
+            {{ ticket.description }}
+          </p>
+          <p *ngIf="!editing && !ticket.description" class="empty-text">
+            Sin descripción.
+          </p>
+          <textarea *ngIf="editing" pTextarea [(ngModel)]="draft.description"
+                    rows="5" class="w-full"
+                    placeholder="Descripción del ticket..."></textarea>
+        </div>
+
+        <!-- Comentarios -->
+        <div class="detail-card">
+          <h3 class="card-section-title">
+            <i class="pi pi-comments"></i> Comentarios ({{ ticket.comments.length }})
+          </h3>
+
+          <div class="comments-list">
+            <div *ngFor="let c of ticket.comments" class="comment-item">
+              <div class="comment-avatar">{{ c.author[0]?.toUpperCase() }}</div>
+              <div class="comment-body">
+                <div class="comment-header">
+                  <span class="comment-author">{{ c.author }}</span>
+                  <span class="comment-date">{{ c.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                <p class="comment-text">{{ c.text }}</p>
               </div>
-              <p>{{ c.text }}</p>
+            </div>
+            <p *ngIf="ticket.comments.length === 0" class="empty-text">
+              Sin comentarios aún.
+            </p>
+          </div>
+
+          <div *ngIf="canComment" class="comment-input-row">
+            <input pInputText [(ngModel)]="newComment"
+                   placeholder="Escribe un comentario..."
+                   class="flex-1"
+                   (keyup.enter)="addComment()" />
+            <button pButton icon="pi pi-send"
+                    class="p-button-sm"
+                    [disabled]="!newComment.trim()"
+                    (click)="addComment()"></button>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="detail-card" *ngIf="ticket.history.length > 0">
+          <h3 class="card-section-title">
+            <i class="pi pi-history"></i> Historial
+          </h3>
+          <div class="history-list">
+            <div *ngFor="let h of ticket.history" class="history-item">
+              <i class="pi pi-circle-fill history-dot"></i>
+              <span class="history-text">
+                <b>{{ h.by }}</b> cambió <b>{{ h.field }}</b>
+                de <span class="from-val">{{ h.from }}</span>
+                a <span class="to-val">{{ h.to }}</span>
+              </span>
+              <span class="history-date">{{ h.date | date:'dd/MM HH:mm' }}</span>
             </div>
           </div>
-          <div *ngIf="ticket.comments.length === 0" class="empty-state">
-            <i class="pi pi-comment"></i> Sin comentarios aún.
-          </div>
         </div>
-        <div class="comment-input">
-          <textarea pTextarea [(ngModel)]="newComment"
-            placeholder="Agrega un comentario..." rows="2" class="w-full"></textarea>
-          <p-button label="Comentar" icon="pi pi-send" size="small"
-            (onClick)="addComment()" [disabled]="!newComment.trim()" />
-        </div>
+
       </div>
 
-      <!-- History -->
-      <div class="detail-card">
-        <h3 class="section-title"><i class="pi pi-history"></i> Historial de cambios</h3>
-        <div class="history-list">
-          <div *ngFor="let h of ticket.history" class="history-item">
-            <i class="pi pi-circle-fill history-dot"></i>
-            <span>
-              <strong>{{ h.by }}</strong> cambió <em>{{ h.field }}</em>
-              de "<span class="from">{{ h.from }}</span>" a "<span class="to">{{ h.to }}</span>"
-              — {{ h.date | date:'d MMM yyyy, HH:mm' }}
+      <!-- Columna derecha: metadata -->
+      <div class="detail-sidebar">
+
+        <!-- Cambiar estado -->
+        <div class="detail-card" *ngIf="canChangeStatus">
+          <h3 class="card-section-title">
+            <i class="pi pi-refresh"></i> Cambiar estado
+          </h3>
+          <div class="status-buttons">
+            <button *ngFor="let s of statuses"
+                    pButton [label]="s"
+                    class="p-button-outlined p-button-sm status-btn"
+                    [class.active-status]="ticket.status === s"
+                    [style.border-color]="getStatusSeverity(s)"
+                    (click)="changeStatus(s)">
+            </button>
+          </div>
+        </div>
+
+        <!-- Prioridad (edición) -->
+        <div class="detail-card" *ngIf="editing">
+          <h3 class="card-section-title">
+            <i class="pi pi-flag"></i> Prioridad
+          </h3>
+          <p-select [(ngModel)]="draft.priority"
+                    [options]="priorities"
+                    placeholder="Prioridad"
+                    class="w-full" />
+        </div>
+
+        <!-- Info -->
+        <div class="detail-card">
+          <h3 class="card-section-title">
+            <i class="pi pi-info-circle"></i> Información
+          </h3>
+          <div class="info-row">
+            <span class="info-label">Creado por</span>
+            <span class="info-value">{{ ticket.createdBy }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Asignado a</span>
+            <span class="info-value">{{ ticket.assignedTo || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Grupo</span>
+            <span class="info-value">#{{ ticket.group_id }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Creado</span>
+            <span class="info-value">{{ ticket.createdAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Vence</span>
+            <span class="info-value"
+                  [class.overdue]="ticket.dueDate && ticket.dueDate < today">
+              {{ ticket.dueDate ? (ticket.dueDate | date:'dd/MM/yyyy') : '—' }}
             </span>
           </div>
-          <div *ngIf="ticket.history.length === 0" class="empty-state">
-            <i class="pi pi-clock"></i> Sin cambios registrados.
+          <div class="info-row" *ngIf="editing">
+            <span class="info-label">Nueva fecha</span>
+            <input type="date" [(ngModel)]="draft.dueDate"
+                   class="info-date-input" />
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sidebar -->
-    <div class="side-col">
-      <div class="detail-card info-card">
-        <h3 class="section-title">Detalles</h3>
-
-        <div class="info-row">
-          <span class="info-label">Estado</span>
-          <div *ngIf="canChangeStatus">
-            <p-select [ngModel]="ticket.status"
-              (ngModelChange)="changeStatus($event)"
-              [options]="statuses" styleClass="w-full" />
-          </div>
-          <p-tag *ngIf="!canChangeStatus"
-            [value]="ticket.status"
-            [severity]="getStatusSeverity(ticket.status)" />
-        </div>
-
-        <div class="info-row">
-          <span class="info-label">Prioridad</span>
-          <p-tag [value]="ticket.priority" [severity]="getPrioritySeverity(ticket.priority)" />
-          <span class="priority-label">{{ getPriorityLabel(ticket.priority) }}</span>
-        </div>
-
-        <!-- FIX: assigned-chip con *ngIf para evitar crash en .charAt() -->
-        <div class="info-row">
-          <span class="info-label">Asignado a</span>
-          <div class="assigned-chip" *ngIf="ticket.assignedTo">
-            <div class="chip-avatar">{{ ticket.assignedTo.charAt(0).toUpperCase() }}</div>
-            <span>{{ ticket.assignedTo }}</span>
-          </div>
-          <span *ngIf="!ticket.assignedTo" class="unassigned">Sin asignar</span>
-        </div>
-
-        <div class="info-row">
-          <span class="info-label">Creado por</span>
-          <span class="info-value">{{ ticket.createdBy || '—' }}</span>
-        </div>
-
-        <div class="info-row">
-          <span class="info-label">Fecha creación</span>
-          <span class="info-value">{{ ticket.createdAt | date:'d MMM yyyy' }}</span>
-        </div>
-
-        <div class="info-row">
-          <span class="info-label">Fecha límite</span>
-          <span class="info-value" [class.overdue]="ticket.dueDate && ticket.dueDate < today">
-            {{ ticket.dueDate ? (ticket.dueDate | date:'d MMM yyyy') : '—' }}
-          </span>
         </div>
 
       </div>
     </div>
-  </div>
+
+  </ng-container>
 </div>
-
-<ng-template #notFound>
-  <div class="not-found">
-    <i class="pi pi-inbox"></i>
-    <p>Ticket no encontrado.</p>
-    <a routerLink="/home/groups">Volver al tablero</a>
-  </div>
-</ng-template>
