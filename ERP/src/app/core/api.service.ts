@@ -23,6 +23,7 @@ export class ApiService {
     });
   }
 
+  // ── Sin Content-Type para DELETE ──────────────────────────────────────────
   private deleteHeaders(): HttpHeaders {
     const token = isPlatformBrowser(this.platformId)
       ? (localStorage.getItem('token') ?? '')
@@ -63,12 +64,6 @@ export class ApiService {
   }
 
   // ── GROUPS ────────────────────────────────────────────────────────────────
-
-  // Grupos a los que pertenece el usuario logueado
-  getMyGroups(): Observable<any> {
-    return this.http.get(`${API_URL}/groups/my`, { headers: this.headers() });
-  }
-
   getGroups(): Observable<any> {
     return this.http.get(`${API_URL}/groups`, { headers: this.headers() });
   }
@@ -100,6 +95,10 @@ export class ApiService {
   removeGroupMember(groupId: number, userId: number): Observable<any> {
     return this.http.delete(`${API_URL}/groups/${groupId}/members/${userId}`, { headers: this.deleteHeaders() });
   }
+
+  getMyGroups(): Observable<any> {
+  return this.http.get(`${API_URL}/groups/my`, { headers: this.headers() });
+}
 
   updateGroupPermissions(groupId: number, body: any): Observable<any> {
     return this.http.post(`${API_URL}/groups/${groupId}/permissions`, body, { headers: this.headers() });
@@ -134,3 +133,5 @@ export class ApiService {
     return this.http.delete(`${API_URL}/tickets/${id}`, { headers: this.deleteHeaders() });
   }
 }
+
+

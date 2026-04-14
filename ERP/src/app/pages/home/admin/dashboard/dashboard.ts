@@ -61,7 +61,7 @@ export class DashboardComponent implements OnInit {
   }
 
   loadGroups() {
-    this.apiService.getMyGroups().subscribe({  // ← CAMBIO
+    this.apiService.getMyGroups().subscribe({
       next: (res: any) => {
         this.groups = res.data ?? [];
         this.groupOptions = this.groups.map(g => ({ label: g.nombre, value: g.id }));
@@ -70,6 +70,9 @@ export class DashboardComponent implements OnInit {
           this.loadTickets(this.selectedGroup);
         }
         this.cdr.detectChanges();
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los grupos.' });
       },
     });
   }

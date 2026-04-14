@@ -20,21 +20,22 @@ import { ApiService } from '../../../../core/api.service';
 import { Ticket, STATUSES, PRIORITIES, TicketStatus, TicketPriority } from '../../../../core/ticket.model';
 
 export interface GroupMember {
-  id: number;
-  name: string;
+  id:    number;
+  name:  string;
   email: string;
-  role: string;
+  role:  string;
 }
 
 export interface Group {
-  id: number;
-  nombre: string;
-  nivel: string;
-  autor: string;
+  id:          number;
+  nombre:      string;
+  nivel:       string;
+  autor:       string;
   integrantes: number;
-  tickets: number;
+  tickets:     number;
   descripcion: string;
-  members: GroupMember[];
+  members:     GroupMember[];
+  my_role?:    string;
 }
 
 type View     = 'list' | 'dashboard';
@@ -81,11 +82,11 @@ export class GroupsComponent implements OnInit {
   dragging: Ticket | null = null;
 
   newTicket: {
-    title: string;
+    title:       string;
     description: string;
-    assignedTo: number | null;
-    priority: TicketPriority;
-    status: TicketStatus;
+    assignedTo:  number | null;
+    priority:    TicketPriority;
+    status:      TicketStatus;
   } = this.emptyTicket();
 
   tableFilter: 'all' | 'mine' | 'unassigned' | 'high' = 'all';
@@ -115,7 +116,7 @@ export class GroupsComponent implements OnInit {
   // ── Grupos ────────────────────────────────────────
   loadGroups() {
     this.loading = true;
-    this.apiService.getMyGroups().subscribe({  // ← CAMBIO
+    this.apiService.getMyGroups().subscribe({
       next: (res: any) => {
         this.loading = false;
         const data = res.data ?? [];
@@ -128,6 +129,7 @@ export class GroupsComponent implements OnInit {
           integrantes: 0,
           tickets:     0,
           members:     [],
+          my_role:     g.my_role ?? '',
         }));
         this.cdr.detectChanges();
 
@@ -180,8 +182,8 @@ export class GroupsComponent implements OnInit {
           id:          t.id,
           title:       t.title,
           description: t.description ?? '',
-          status:      (t.status ?? 'Pendiente') as TicketStatus,
-          priority:    (t.priority ?? 'Media')   as TicketPriority,
+          status:      (t.status   ?? 'Pendiente') as TicketStatus,
+          priority:    (t.priority ?? 'Media')     as TicketPriority,
           assignedTo:  t.assigned_to
                          ? (typeof t.assigned_to === 'object' ? t.assigned_to.name : String(t.assigned_to))
                          : '',
@@ -217,8 +219,8 @@ export class GroupsComponent implements OnInit {
 
   openEdit(g: Group, event: Event) {
     event.stopPropagation();
-    this.current   = { ...g, members: [...g.members] };
-    this.isEditing = true;
+    this.current    = { ...g, members: [...g.members] };
+    this.isEditing  = true;
     this.showDialog = true;
   }
 
