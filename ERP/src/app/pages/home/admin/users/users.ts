@@ -23,10 +23,6 @@ const PERMISSION_GROUPS = [
   { label: 'Sistema',  icon: 'pi pi-shield',  perms: ['superadmin'] },
 ];
 
-const TICKET_PERMS = [
-  'ticket:view', 'ticket:edit', 'ticket:add', 'ticket:delete', 'ticket:edit_state'
-];
-
 export interface UserWithPerms {
   id:       number;
   username: string;
@@ -63,8 +59,8 @@ export class UsersComponent implements OnInit {
   permGroups   = PERMISSION_GROUPS;
 
   // ── Grupos y permisos por grupo ───────────────────
-  userGroups:      any[]          = [];
-  selectedGroupId: number | null  = null;
+  userGroups:      any[]         = [];
+  selectedGroupId: number | null = null;
   groupPerms:      { code: string; description: string }[] = [];
   loadingGroups    = false;
   loadingPerms     = false;
@@ -132,8 +128,8 @@ export class UsersComponent implements OnInit {
 
   get filtered() {
     return this.users.filter(u =>
-      u.name?.toLowerCase().includes(this.search.toLowerCase())     ||
-      u.email?.toLowerCase().includes(this.search.toLowerCase())    ||
+      u.name?.toLowerCase().includes(this.search.toLowerCase())  ||
+      u.email?.toLowerCase().includes(this.search.toLowerCase()) ||
       u.username?.toLowerCase().includes(this.search.toLowerCase())
     );
   }
@@ -163,10 +159,8 @@ export class UsersComponent implements OnInit {
     this.apiService.getUserGroups(userId).subscribe({
       next: (res: any) => {
         this.loadingGroups = false;
-        // FIX: el backend devuelve { id, nombre, my_role, ... } en cada item
-        this.userGroups = res.data ?? [];
+        this.userGroups    = res.data ?? [];
         if (this.userGroups.length > 0) {
-          // FIX: asegurar que selectedGroupId sea number, no string
           this.selectedGroupId = Number(this.userGroups[0].id);
           this.loadGroupPerms(userId, this.selectedGroupId);
         }
@@ -180,31 +174,35 @@ export class UsersComponent implements OnInit {
   }
 
   onGroupSelect(groupId: number) {
-    // FIX: forzar conversión a number para evitar comparaciones string vs number
-    this.selectedGroupId = Number(groupId);
+    // FIX: capturar en variable local inmediata para evitar race condition
+    const gid = Number(groupId);
+    this.selectedGroupId = gid;
     this.groupPerms      = [];
-    this.loadGroupPerms(this.selectedUser!.id, this.selectedGroupId);
+    if (this.selectedUser) {
+      this.loadGroupPerms(this.selectedUser.id, gid);
+    }
   }
 
   loadGroupPerms(userId: number, groupId: number) {
+    // FIX: guardar el groupId solicitado para validarlo cuando vuelva la respuesta async
+    const requestedGroupId = Number(groupId);
     this.loadingPerms = true;
-    // FIX: asegurar que ambos parámetros son number
-    this.apiService.getGroupPermissions(Number(groupId), Number(userId)).subscribe({
+
+    this.apiService.getGroupPermissions(requestedGroupId, Number(userId)).subscribe({
       next: (res: any) => {
+        // FIX: descartar respuesta si el usuario ya cambió a otro grupo (race condition)
+        if (this.selectedGroupId !== requestedGroupId) return;
         this.loadingPerms = false;
         this.groupPerms   = res.data?.perms ?? [];
         this.cdr.detectChanges();
       },
       error: () => {
+        if (this.selectedGroupId !== requestedGroupId) return;
         this.loadingPerms = false;
         this.groupPerms   = [];
         this.cdr.detectChanges();
       },
     });
-  }
-
-  isTicketPerm(code: string): boolean {
-    return TICKET_PERMS.includes(code);
   }
 
   filteredPermGroups() {
@@ -243,23 +241,28 @@ export class UsersComponent implements OnInit {
 
   toggleGroupPerm(code: string) {
     if (!this.selectedUser || !this.selectedGroupId) return;
-    if (!this.isTicketPerm(code)) return;
+
+    // FIX: capturar groupId y userId en constantes locales inmutables
+    // Si el usuario cambia de grupo mientras espera la respuesta HTTP,
+    // el update se enviará al grupo correcto (el que estaba al hacer click)
+    const targetGroupId = Number(this.selectedGroupId);
+    const targetUserId  = Number(this.selectedUser.id);
 
     const has = this.hasGroupPerm(code);
 
-    // Actualizar localmente primero (optimistic update)
+    // Optimistic update
     if (has) {
       this.groupPerms = this.groupPerms.filter(p => p.code !== code);
     } else {
       this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
     }
 
-    // FIX: enviar TODOS los permisos activos del grupo, no solo los tickets
-    // El backend hace DELETE + INSERT, si solo mandas tickets pierdes los demás permisos
+    // FIX: tomar snapshot del array DESPUÉS del update local
+    // para asegurar que perm_codes refleja el estado actual
     const allPermCodes = this.groupPerms.map(p => p.code);
 
-    this.apiService.updateGroupPermissions(this.selectedGroupId, {
-      user_id:    this.selectedUser.id,
+    this.apiService.updateGroupPermissions(targetGroupId, {
+      user_id:    targetUserId,
       perm_codes: allPermCodes,
     }).subscribe({
       next: () => {
@@ -270,13 +273,15 @@ export class UsersComponent implements OnInit {
         });
       },
       error: () => {
-        // Revertir cambio local si falla el API
-        if (has) {
-          this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
-        } else {
-          this.groupPerms = this.groupPerms.filter(p => p.code !== code);
+        // Revertir solo si el grupo sigue siendo el mismo
+        if (this.selectedGroupId === targetGroupId) {
+          if (has) {
+            this.groupPerms = [...this.groupPerms, { code, description: this.getPermDescription(code) }];
+          } else {
+            this.groupPerms = this.groupPerms.filter(p => p.code !== code);
+          }
+          this.cdr.detectChanges();
         }
-        this.cdr.detectChanges();
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el permiso.' });
       },
     });
