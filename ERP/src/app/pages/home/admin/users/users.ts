@@ -23,6 +23,9 @@ const PERMISSION_GROUPS = [
   { label: 'Sistema',  icon: 'pi pi-shield',  perms: ['superadmin'] },
 ];
 
+// Permisos que aplican por grupo (contextuales)
+const GROUP_SCOPED_LABELS = ['Tickets'];
+
 export interface UserWithPerms {
   id:       number;
   username: string;
@@ -194,10 +197,17 @@ export class UsersComponent implements OnInit {
     });
   }
 
+  // Devuelve solo los grupos de permisos visibles según contexto
   filteredPermGroups() {
-    if (!this.permSearch.trim()) return this.permGroups;
+    // Con grupo seleccionado → solo permisos contextuales (Tickets)
+    const visible = this.selectedGroupId
+      ? this.permGroups.filter(g => GROUP_SCOPED_LABELS.includes(g.label))
+      : this.permGroups;
+
+    if (!this.permSearch.trim()) return visible;
+
     const q = this.permSearch.toLowerCase();
-    return this.permGroups
+    return visible
       .map(g => ({ ...g, perms: g.perms.filter((p: string) => p.toLowerCase().includes(q)) }))
       .filter(g => g.perms.length > 0);
   }
@@ -210,7 +220,6 @@ export class UsersComponent implements OnInit {
   // Devuelve la descripción de un permiso
   getPermDescription(code: string): string {
     const found = this.groupPerms.find(p => p.code === code);
-    // Buscar en todos los perms disponibles
     const allPerms: Record<string, string> = {
       'group:view':        'Ver grupos',
       'group:edit':        'Editar grupos',

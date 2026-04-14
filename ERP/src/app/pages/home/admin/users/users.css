@@ -77,3 +77,11 @@
 .field label { font-size: 0.82rem; font-weight: 600; color: #374151; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .w-full { width: 100% !important; }
+
+.perm-scope-note {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  opacity: 0.8;
+}
